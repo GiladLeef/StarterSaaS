@@ -1,6 +1,6 @@
 # SaaS Backend Starter
 
-This is a generic SaaS backend + frontend starter template built with Go, Gin, and GORM with SQLite and Typescript/Next.js on the frontend.
+This is a generic, modern and simple full SaaS backend + frontend starter template built with Go, Gin, and GORM with SQLite and Typescript/Next.js on the frontend.
 
 ## Features
 
