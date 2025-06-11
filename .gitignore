@@ -1,0 +1,55 @@
+# General
+.DS_Store
+*.log
+logs
+yarn-debug.log*
+yarn-error.log*
+
+# Dependencies
+node_modules
+
+# Build outputs
+dist
+build
+out
+.next
+.turbo
+.vercel
+.output
+
+# Go specific
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work
+
+# Editor directories and files
+.idea
+.vscode/*
+!.vscode/extensions.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.project
+.classpath
+.settings/
+
+# Data directories
+data/*.db
+data/uploads
+tmp
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# Misc
+.cache
+.temp
+.tmp 
