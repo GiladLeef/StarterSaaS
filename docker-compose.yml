@@ -26,6 +26,8 @@ services:
       - PORT=8080
       - JWT_SECRET=development-secret-change-in-production
       - JWT_EXPIRY=24h
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
       interval: 10s
