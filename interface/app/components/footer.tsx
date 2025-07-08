@@ -15,7 +15,7 @@ export function Footer() {
             Privacy
           </Link>
           <a 
-            href="https://github.com/yourusername/platform" 
+            href="https://github.com/giladleef/startersaas" 
             target="_blank" 
             rel="noreferrer"
             className="text-sm text-muted-foreground hover:text-foreground"
