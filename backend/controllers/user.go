@@ -41,7 +41,7 @@ func (uc *UserController) GetCurrentUser(c *gin.Context) {
 		"firstName": user.FirstName,
 		"lastName":  user.LastName,
 		"isActive":  user.IsActive,
-		"isAdmin":   user.IsAdmin,
+		"role":      user.Role,
 	})
 }
 
@@ -94,7 +94,7 @@ func (uc *UserController) UpdateCurrentUser(c *gin.Context) {
 		"firstName": user.FirstName,
 		"lastName":  user.LastName,
 		"isActive":  user.IsActive,
-		"isAdmin":   user.IsAdmin,
+		"role":      user.Role,
 	})
 }
 

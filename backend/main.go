@@ -27,6 +27,31 @@ func main() {
 		log.Fatalf("Failed to run migrations: %v", err)
 	}
 
+	// Create admin user if not exists
+	adminEmail := os.Getenv("ADMIN_EMAIL")
+	adminPassword := os.Getenv("ADMIN_PASSWORD")
+	adminFirstName := os.Getenv("ADMIN_FIRST_NAME")
+	adminLastName := os.Getenv("ADMIN_LAST_NAME")
+	if adminEmail != "" && adminPassword != "" {
+		var count int64
+		db.DB.Model(&models.User{}).Where("email = ?", adminEmail).Count(&count)
+		if count == 0 {
+			hashedPassword, err := utils.HashPassword(adminPassword)
+			if err != nil {
+				return
+			}
+			admin := models.User{
+				Email:        adminEmail,
+				PasswordHash: hashedPassword,
+				FirstName:    adminFirstName,
+				LastName:     adminLastName,
+				IsActive:     true,
+				Role:         "admin",
+			}
+			_ = db.DB.Create(&admin).Error
+		}
+	}
+
 	// Initialize Gin router
 	r := gin.New()
 	r.Use(gin.Logger())

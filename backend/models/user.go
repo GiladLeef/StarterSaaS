@@ -14,7 +14,7 @@ type User struct {
 	FirstName    string         `json:"firstName"`
 	LastName     string         `json:"lastName"`
 	IsActive     bool           `gorm:"default:true" json:"isActive"`
-	IsAdmin      bool           `gorm:"default:false" json:"isAdmin"`
+	Role         string         `gorm:"type:varchar(16);default:'user'" json:"role"`
 	Organizations []Organization `gorm:"many2many:user_organizations;" json:"organizations,omitempty"`
 	ApiKeys      []ApiKey       `gorm:"foreignKey:UserID" json:"apiKeys,omitempty"`
 	CreatedAt    time.Time      `json:"createdAt"`

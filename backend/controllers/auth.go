@@ -69,6 +69,7 @@ func (ac *AuthController) Register(c *gin.Context) {
 		FirstName:    req.FirstName,
 		LastName:     req.LastName,
 		IsActive:     true,
+		Role:         "user",
 	}
 
 	if result := db.DB.Create(&user); result.Error != nil {
@@ -89,6 +90,7 @@ func (ac *AuthController) Register(c *gin.Context) {
 			"email":     user.Email,
 			"firstName": user.FirstName,
 			"lastName":  user.LastName,
+			"role":      user.Role,
 		},
 		"token": token,
 	})
@@ -130,6 +132,7 @@ func (ac *AuthController) Login(c *gin.Context) {
 			"email":     user.Email,
 			"firstName": user.FirstName,
 			"lastName":  user.LastName,
+			"role":      user.Role,
 		},
 	})
 }
