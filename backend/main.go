@@ -5,6 +5,7 @@ import (
 	"platform/backend/db"
 	"platform/backend/routes"
 	"platform/backend/models"
+	"platform/backend/utils"
 
 	"log"
 	"os"
