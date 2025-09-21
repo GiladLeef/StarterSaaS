@@ -41,7 +41,7 @@ go.work
 .settings/
 
 # Data directories
-data/*.db
+*.db
 data/uploads
 tmp
 
