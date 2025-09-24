@@ -15,22 +15,18 @@ import (
 )
 
 func main() {
-	// Load environment variables
 	if err := config.LoadEnv(); err != nil {
 		log.Fatalf("Error loading .env file: %v", err)
 	}
 
-	// Initialize database
 	if err := db.InitDB(); err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
 
-	// Run database migrations
 	if err := db.RunMigrations(); err != nil {
 		log.Fatalf("Failed to run migrations: %v", err)
 	}
 
-	// Create admin user if not exists
 	adminEmail := os.Getenv("ADMIN_EMAIL")
 	adminPassword := os.Getenv("ADMIN_PASSWORD")
 	adminFirstName := os.Getenv("ADMIN_FIRST_NAME")
@@ -55,32 +51,27 @@ func main() {
 		}
 	}
 
-	// Initialize Gin router
 	r := gin.New()
 	r.Use(gin.Logger())
 	r.Use(gin.Recovery())
-	r.RedirectTrailingSlash = false // Disable automatic redirects
+	r.RedirectTrailingSlash = false 
 
-	// Configure CORS - allow any origin for development
 	r.Use(cors.New(cors.Config{
 		AllowAllOrigins:  true,
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "Accept", "X-Requested-With"},
 		ExposeHeaders:    []string{"Content-Length", "Content-Type"},
 		AllowCredentials: true,
-		MaxAge:           86400, // 24 hours
+		MaxAge:           86400, 
 	}))
 
-	// Setup routes
 	routes.SetupRoutes(r)
 
-	// Get port from environment or use default
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
 
-	// Start server
 	if err := r.Run(":" + port); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}

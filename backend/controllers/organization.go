@@ -26,7 +26,6 @@ type UpdateOrganizationRequest struct {
 	Description string `json:"description"`
 }
 
-// ListOrganizations returns a list of organizations for the current user
 func (oc *OrganizationController) ListOrganizations(c *gin.Context) {
 	userID, ok := oc.RequireAuthentication(c)
 	if !ok {
@@ -43,7 +42,6 @@ func (oc *OrganizationController) ListOrganizations(c *gin.Context) {
 	utils.SuccessResponse(c, http.StatusOK, "", gin.H{"organizations": organizations})
 }
 
-// CreateOrganization creates a new organization
 func (oc *OrganizationController) CreateOrganization(c *gin.Context) {
 	var req CreateOrganizationRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -56,14 +54,12 @@ func (oc *OrganizationController) CreateOrganization(c *gin.Context) {
 		return
 	}
 
-	// Generate slug from name if not provided
 	if req.Slug == "" {
 		req.Slug = strings.ToLower(strings.ReplaceAll(req.Name, " ", "-"))
 	} else {
 		req.Slug = strings.ToLower(req.Slug)
 	}
 
-	// Ensure slug is unique by appending a number if needed
 	baseSlug := req.Slug
 	counter := 1
 	
@@ -71,43 +67,37 @@ func (oc *OrganizationController) CreateOrganization(c *gin.Context) {
 		var existingOrg models.Organization
 		result := oc.FindOne(&existingOrg, "slug = ?", req.Slug)
 		if result.RowsAffected == 0 {
-			break // Slug is unique
+			break 
 		}
 		
-		// Append counter to slug and increment
 		req.Slug = baseSlug + "-" + utils.IntToString(counter)
 		counter++
 	}
 
-	// Create the organization
 	org := models.Organization{
 		Name:        req.Name,
 		Slug:        req.Slug,
 		Description: req.Description,
 	}
 
-	// Start a transaction
 	tx := db.DB.Begin()
 	if tx.Error != nil {
 		utils.ServerErrorResponse(c, tx.Error)
 		return
 	}
 
-	// Create the organization
 	if err := tx.Create(&org).Error; err != nil {
 		tx.Rollback()
 		utils.ServerErrorResponse(c, err)
 		return
 	}
 
-	// Add the current user to the organization
 	if err := tx.Exec("INSERT INTO user_organizations (user_id, organization_id) VALUES (?, ?)", userID, org.ID).Error; err != nil {
 		tx.Rollback()
 		utils.ServerErrorResponse(c, err)
 		return
 	}
 
-	// Commit the transaction
 	if err := tx.Commit().Error; err != nil {
 		utils.ServerErrorResponse(c, err)
 		return
@@ -116,7 +106,6 @@ func (oc *OrganizationController) CreateOrganization(c *gin.Context) {
 	utils.SuccessResponse(c, http.StatusCreated, "Organization created successfully", gin.H{"organization": org})
 }
 
-// GetOrganization returns a single organization by ID
 func (oc *OrganizationController) GetOrganization(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -138,7 +127,6 @@ func (oc *OrganizationController) GetOrganization(c *gin.Context) {
 	utils.SuccessResponse(c, http.StatusOK, "", gin.H{"organization": org})
 }
 
-// UpdateOrganization updates an organization
 func (oc *OrganizationController) UpdateOrganization(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -163,7 +151,6 @@ func (oc *OrganizationController) UpdateOrganization(c *gin.Context) {
 		return
 	}
 
-	// Update fields if provided
 	if req.Name != "" {
 		org.Name = req.Name
 	}
@@ -179,7 +166,6 @@ func (oc *OrganizationController) UpdateOrganization(c *gin.Context) {
 	utils.SuccessResponse(c, http.StatusOK, "Organization updated successfully", gin.H{"organization": org})
 }
 
-// DeleteOrganization deletes an organization
 func (oc *OrganizationController) DeleteOrganization(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -206,7 +192,6 @@ func (oc *OrganizationController) DeleteOrganization(c *gin.Context) {
 	utils.SuccessResponse(c, http.StatusOK, "Organization deleted successfully", nil)
 }
 
-// FindUserOrganizations finds all organizations for a user
 func (oc *OrganizationController) FindUserOrganizations(organizations *[]models.Organization, userID uuid.UUID) error {
 	return oc.FindWhere(organizations, "id IN (SELECT organization_id FROM user_organizations WHERE user_id = ?)", userID).Error
 } 

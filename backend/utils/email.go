@@ -8,7 +8,6 @@ import (
 	mail "github.com/xhit/go-simple-mail/v2"
 )
 
-// EmailConfig holds SMTP server configuration
 type EmailConfig struct {
 	SMTPServer   string
 	SMTPPort     int
@@ -18,7 +17,6 @@ type EmailConfig struct {
 	FromName     string
 }
 
-// GetEmailConfig loads email configuration from environment variables
 func GetEmailConfig() EmailConfig {
 	return EmailConfig{
 		SMTPServer:   os.Getenv("SMTP_SERVER"),
@@ -30,7 +28,6 @@ func GetEmailConfig() EmailConfig {
 	}
 }
 
-// GetIntEnv gets an integer from environment variables with a default value
 func GetIntEnv(key string, defaultVal int) int {
 	val := os.Getenv(key)
 	if val == "" {
@@ -41,11 +38,9 @@ func GetIntEnv(key string, defaultVal int) int {
 	return result
 }
 
-// SendPasswordResetEmail sends a password reset email to the user
 func SendPasswordResetEmail(email, resetToken, resetURL string) error {
 	config := GetEmailConfig()
 
-	// Create a new SMTP client
 	server := mail.NewSMTPClient()
 	server.Host = config.SMTPServer
 	server.Port = config.SMTPPort
@@ -56,19 +51,16 @@ func SendPasswordResetEmail(email, resetToken, resetURL string) error {
 	server.ConnectTimeout = 10 * time.Second
 	server.SendTimeout = 10 * time.Second
 
-	// Connect to the SMTP server
 	smtpClient, err := server.Connect()
 	if err != nil {
 		return err
 	}
 
-	// Create a new email message
 	email_msg := mail.NewMSG()
 	email_msg.SetFrom(fmt.Sprintf("%s <%s>", config.FromName, config.FromEmail))
 	email_msg.AddTo(email)
 	email_msg.SetSubject("Password Reset Request")
 
-	// Create the email body
 	emailBody := fmt.Sprintf(`
 		<h1>Password Reset Request</h1>
 		<p>We received a request to reset your password. If you didn't make this request, you can ignore this email.</p>
@@ -80,6 +72,5 @@ func SendPasswordResetEmail(email, resetToken, resetURL string) error {
 
 	email_msg.SetBody(mail.TextHTML, emailBody)
 
-	// Send the email
 	return email_msg.Send(smtpClient)
 } 

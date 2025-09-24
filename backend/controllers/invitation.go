@@ -20,7 +20,6 @@ type CreateInvitationRequest struct {
 	Email          string `json:"email" binding:"required,email"`
 }
 
-// CreateInvitation creates a new invitation for a user to join an organization
 func (ic *InvitationController) CreateInvitation(c *gin.Context) {
 	var req CreateInvitationRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -28,24 +27,20 @@ func (ic *InvitationController) CreateInvitation(c *gin.Context) {
 		return
 	}
 
-	// Parse organization ID
 	orgID, err := uuid.Parse(req.OrganizationID)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid organization ID")
 		return
 	}
 
-	// Check if user has access to organization
 	userID, ok := ic.CheckOrganizationAccess(c, orgID)
 	if !ok {
 		return
 	}
 
-	// Check if the user is already a member of the organization
 	var user models.User
 	result := db.DB.Where("email = ?", req.Email).First(&user)
 	if result.RowsAffected > 0 {
-		// Check if the user is already a member
 		var count int64
 		db.DB.Table("user_organizations").
 			Where("organization_id = ? AND user_id = ?", orgID, user.ID).
@@ -57,7 +52,6 @@ func (ic *InvitationController) CreateInvitation(c *gin.Context) {
 		}
 	}
 
-	// Check if there's an existing pending invitation
 	var existingInvitation models.OrganizationInvitation
 	result = db.DB.Where("organization_id = ? AND email = ? AND status = ?", 
 		orgID, req.Email, "pending").
@@ -69,13 +63,12 @@ func (ic *InvitationController) CreateInvitation(c *gin.Context) {
 		return
 	}
 
-	// Create the invitation
 	invitation := models.OrganizationInvitation{
 		OrganizationID: orgID,
 		InviterID:      userID,
 		Email:          req.Email,
 		Status:         "pending",
-		ExpiresAt:      time.Now().AddDate(0, 0, 7), // Expires in 7 days
+		ExpiresAt:      time.Now().AddDate(0, 0, 7), 
 	}
 
 	if err := ic.Create(&invitation); err != nil {
@@ -86,21 +79,18 @@ func (ic *InvitationController) CreateInvitation(c *gin.Context) {
 	utils.SuccessResponse(c, http.StatusCreated, "Invitation sent successfully", gin.H{"invitation": invitation})
 }
 
-// ListInvitations returns a list of invitations for the current user
 func (ic *InvitationController) ListInvitations(c *gin.Context) {
 	userID, ok := ic.RequireAuthentication(c)
 	if !ok {
 		return
 	}
 
-	// Get the user's email
 	var user models.User
 	if err := ic.FindByID(&user, userID); err != nil {
 		utils.NotFoundResponse(c, "User not found")
 		return
 	}
 
-	// Get invitations for the user's email
 	var invitations []models.OrganizationInvitation
 	err := db.DB.Preload("Organization").Preload("Inviter").
 		Where("email = ? AND status = ? AND expires_at > ?", 
@@ -115,7 +105,6 @@ func (ic *InvitationController) ListInvitations(c *gin.Context) {
 	utils.SuccessResponse(c, http.StatusOK, "", gin.H{"invitations": invitations})
 }
 
-// AcceptInvitation accepts an invitation for a user to join an organization
 func (ic *InvitationController) AcceptInvitation(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -128,14 +117,12 @@ func (ic *InvitationController) AcceptInvitation(c *gin.Context) {
 		return
 	}
 
-	// Get the user's email
 	var user models.User
 	if err := ic.FindByID(&user, userID); err != nil {
 		utils.NotFoundResponse(c, "User not found")
 		return
 	}
 
-	// Get the invitation
 	var invitation models.OrganizationInvitation
 	err = db.DB.Where("id = ? AND email = ? AND status = ? AND expires_at > ?", 
 		id, user.Email, "pending", time.Now()).
@@ -146,14 +133,12 @@ func (ic *InvitationController) AcceptInvitation(c *gin.Context) {
 		return
 	}
 
-	// Start a transaction
 	tx := db.DB.Begin()
 	if tx.Error != nil {
 		utils.ServerErrorResponse(c, tx.Error)
 		return
 	}
 
-	// Update invitation status
 	invitation.Status = "accepted"
 	if err := tx.Save(&invitation).Error; err != nil {
 		tx.Rollback()
@@ -161,7 +146,6 @@ func (ic *InvitationController) AcceptInvitation(c *gin.Context) {
 		return
 	}
 
-	// Add the user to the organization
 	if err := tx.Exec("INSERT INTO user_organizations (user_id, organization_id) VALUES (?, ?)", 
 		userID, invitation.OrganizationID).Error; err != nil {
 		tx.Rollback()
@@ -169,7 +153,6 @@ func (ic *InvitationController) AcceptInvitation(c *gin.Context) {
 		return
 	}
 
-	// Commit the transaction
 	if err := tx.Commit().Error; err != nil {
 		utils.ServerErrorResponse(c, err)
 		return
@@ -178,7 +161,6 @@ func (ic *InvitationController) AcceptInvitation(c *gin.Context) {
 	utils.SuccessResponse(c, http.StatusOK, "Invitation accepted successfully", nil)
 }
 
-// DeclineInvitation declines an invitation
 func (ic *InvitationController) DeclineInvitation(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -191,14 +173,12 @@ func (ic *InvitationController) DeclineInvitation(c *gin.Context) {
 		return
 	}
 
-	// Get the user's email
 	var user models.User
 	if err := ic.FindByID(&user, userID); err != nil {
 		utils.NotFoundResponse(c, "User not found")
 		return
 	}
 
-	// Get the invitation
 	var invitation models.OrganizationInvitation
 	err = db.DB.Where("id = ? AND email = ? AND status = ?", 
 		id, user.Email, "pending").
@@ -209,7 +189,6 @@ func (ic *InvitationController) DeclineInvitation(c *gin.Context) {
 		return
 	}
 
-	// Update invitation status
 	invitation.Status = "declined"
 	if err := db.DB.Save(&invitation).Error; err != nil {
 		utils.ServerErrorResponse(c, err)

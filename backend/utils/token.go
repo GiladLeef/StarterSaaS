@@ -16,7 +16,6 @@ type TokenClaims struct {
 	jwt.RegisteredClaims
 }
 
-// GenerateToken creates a new JWT token for a user
 func GenerateToken(userID uuid.UUID) (string, error) {
 	secret := getJWTSecret()
 	expiry := getJWTExpiry()
@@ -39,7 +38,6 @@ func GenerateToken(userID uuid.UUID) (string, error) {
 	return tokenString, nil
 }
 
-// ValidateToken validates a JWT token and returns the user ID
 func ValidateToken(tokenString string) (uuid.UUID, error) {
 	secret := getJWTSecret()
 	log.Printf("Validating token: %s...", tokenString[:20])
@@ -66,7 +64,6 @@ func ValidateToken(tokenString string) (uuid.UUID, error) {
 	return uuid.Nil, errors.New("invalid token")
 }
 
-// getJWTSecret returns the JWT secret from environment variables
 func getJWTSecret() string {
 	secret := os.Getenv("JWT_SECRET")
 	if secret == "" {
@@ -75,16 +72,15 @@ func getJWTSecret() string {
 	return secret
 }
 
-// getJWTExpiry returns the JWT expiry duration from environment variables
 func getJWTExpiry() time.Duration {
 	expiryStr := os.Getenv("JWT_EXPIRY")
 	if expiryStr == "" {
-		return 24 * time.Hour // Default to 24 hours
+		return 24 * time.Hour 
 	}
 
 	expiry, err := time.ParseDuration(expiryStr)
 	if err != nil {
-		return 24 * time.Hour // Default to 24 hours on error
+		return 24 * time.Hour 
 	}
 
 	return expiry

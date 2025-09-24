@@ -9,13 +9,11 @@ import (
 	"github.com/google/uuid"
 )
 
-// SubscriptionController handles subscription endpoints
 type SubscriptionController struct {
 	BaseController
 	OrganizationController
 }
 
-// ListSubscriptions returns a list of subscriptions
 func (sc *SubscriptionController) ListSubscriptions(c *gin.Context) {
 	userID, ok := sc.GetCurrentUserID(c)
 	if !ok {
@@ -23,7 +21,6 @@ func (sc *SubscriptionController) ListSubscriptions(c *gin.Context) {
 		return
 	}
 
-	// Get query parameters for filtering
 	orgIDStr := c.Query("organizationId")
 	var orgID *uuid.UUID
 
@@ -35,7 +32,6 @@ func (sc *SubscriptionController) ListSubscriptions(c *gin.Context) {
 		}
 		orgID = &id
 
-		// Check if the user has access to the organization
 		if !sc.CheckOwnership(id, userID) {
 			utils.UnauthorizedResponse(c, "You don't have access to this organization")
 			return
@@ -57,7 +53,6 @@ func (sc *SubscriptionController) ListSubscriptions(c *gin.Context) {
 	utils.SuccessResponse(c, http.StatusOK, "", gin.H{"subscriptions": subscriptions})
 }
 
-// GetSubscription returns a single subscription by ID
 func (sc *SubscriptionController) GetSubscription(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -77,7 +72,6 @@ func (sc *SubscriptionController) GetSubscription(c *gin.Context) {
 		return
 	}
 
-	// Check if the user has access to the organization
 	if !sc.CheckOwnership(subscription.OrganizationID, userID) {
 		utils.UnauthorizedResponse(c, "You don't have access to this subscription")
 		return

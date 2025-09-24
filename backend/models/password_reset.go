@@ -23,7 +23,6 @@ func (p *PasswordResetToken) BeforeCreate(tx *gorm.DB) error {
 		p.ID = uuid.New()
 	}
 	
-	// Set expiration date to 1 hour from now if not set
 	if p.ExpiresAt.IsZero() {
 		p.ExpiresAt = time.Now().Add(1 * time.Hour)
 	}

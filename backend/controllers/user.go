@@ -10,7 +10,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// UserController handles user-related endpoints
 type UserController struct {
 	BaseController
 }
@@ -21,7 +20,6 @@ type UpdateUserRequest struct {
 	Email     string `json:"email" binding:"omitempty,email"`
 }
 
-// GetCurrentUser returns the current authenticated user
 func (uc *UserController) GetCurrentUser(c *gin.Context) {
 	userID, ok := middleware.GetUserID(c)
 	if !ok {
@@ -45,7 +43,6 @@ func (uc *UserController) GetCurrentUser(c *gin.Context) {
 	})
 }
 
-// UpdateCurrentUser updates the current authenticated user
 func (uc *UserController) UpdateCurrentUser(c *gin.Context) {
 	var req UpdateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -65,7 +62,6 @@ func (uc *UserController) UpdateCurrentUser(c *gin.Context) {
 		return
 	}
 
-	// Update user fields if provided
 	if req.FirstName != "" {
 		user.FirstName = req.FirstName
 	}
@@ -73,7 +69,6 @@ func (uc *UserController) UpdateCurrentUser(c *gin.Context) {
 		user.LastName = req.LastName
 	}
 	if req.Email != "" && req.Email != user.Email {
-		// Check if email is already taken
 		var existingUser models.User
 		result := db.DB.Where("email = ? AND id != ?", req.Email, userID).First(&existingUser)
 		if result.RowsAffected > 0 {
@@ -98,7 +93,6 @@ func (uc *UserController) UpdateCurrentUser(c *gin.Context) {
 	})
 }
 
-// DeleteCurrentUser deletes the current authenticated user
 func (uc *UserController) DeleteCurrentUser(c *gin.Context) {
 	userID, ok := middleware.GetUserID(c)
 	if !ok {
@@ -112,7 +106,6 @@ func (uc *UserController) DeleteCurrentUser(c *gin.Context) {
 		return
 	}
 
-	// Soft delete the user
 	if result := db.DB.Delete(&user); result.Error != nil {
 		utils.ServerErrorResponse(c, result.Error)
 		return

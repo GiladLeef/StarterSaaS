@@ -7,9 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// SetupRoutes configures all the routes for the application
 func SetupRoutes(r *gin.Engine) {
-	// Initialize controllers
 	healthController := &controllers.HealthController{}
 	authController := &controllers.AuthController{}
 	userController := &controllers.UserController{}
@@ -18,13 +16,10 @@ func SetupRoutes(r *gin.Engine) {
 	subscriptionController := &controllers.SubscriptionController{}
 	invitationController := &controllers.InvitationController{}
 
-	// Health check endpoint
 	r.GET("/health", healthController.HealthCheck)
 
-	// API v1 group
 	v1 := r.Group("/api/v1")
 	{
-		// Auth routes
 		auth := v1.Group("/auth")
 		{
 			auth.POST("/register", authController.Register)
@@ -34,11 +29,9 @@ func SetupRoutes(r *gin.Engine) {
 			auth.POST("/reset-password", authController.ResetPassword)
 		}
 
-		// Protected routes (require authentication)
 		protected := v1.Group("/")
 		protected.Use(middleware.AuthRequired())
 		{
-			// User routes
 			users := protected.Group("/users")
 			{
 				users.GET("/me", userController.GetCurrentUser)
@@ -46,7 +39,6 @@ func SetupRoutes(r *gin.Engine) {
 				users.DELETE("/me", userController.DeleteCurrentUser)
 			}
 
-			// Organization routes
 			orgs := protected.Group("/organizations")
 			{
 				orgs.GET("", orgController.ListOrganizations)
@@ -56,7 +48,6 @@ func SetupRoutes(r *gin.Engine) {
 				orgs.DELETE("/:id", orgController.DeleteOrganization)
 			}
 
-			// Project routes
 			projects := protected.Group("/projects")
 			{
 				projects.GET("", projectController.ListProjects)
@@ -67,14 +58,12 @@ func SetupRoutes(r *gin.Engine) {
 			}
 
 
-			// Subscription routes
 			subscriptions := protected.Group("/subscriptions")
 			{
 				subscriptions.GET("", subscriptionController.ListSubscriptions)
 				subscriptions.GET("/:id", subscriptionController.GetSubscription)
 			}
 
-			// Invitation routes
 			invitations := protected.Group("/invitations")
 			{
 				invitations.GET("", invitationController.ListInvitations)

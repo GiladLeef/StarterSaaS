@@ -14,7 +14,7 @@ type OrganizationInvitation struct {
 	InviterID      uuid.UUID      `gorm:"type:uuid;not null" json:"inviterId"`
 	Inviter        User           `json:"inviter,omitempty"`
 	Email          string         `gorm:"not null" json:"email"`
-	Status         string         `gorm:"default:'pending'" json:"status"` // pending, accepted, declined
+	Status         string         `gorm:"default:'pending'" json:"status"` 
 	ExpiresAt      time.Time      `json:"expiresAt"`
 	CreatedAt      time.Time      `json:"createdAt"`
 	UpdatedAt      time.Time      `json:"updatedAt"`
@@ -26,7 +26,6 @@ func (i *OrganizationInvitation) BeforeCreate(tx *gorm.DB) error {
 		i.ID = uuid.New()
 	}
 	
-	// Set expiration date to 7 days from now if not set
 	if i.ExpiresAt.IsZero() {
 		i.ExpiresAt = time.Now().AddDate(0, 0, 7)
 	}

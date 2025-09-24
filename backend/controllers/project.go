@@ -9,7 +9,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// ProjectController handles project-related endpoints
 type ProjectController struct {
 	BaseController
 	OrganizationController
@@ -27,7 +26,6 @@ type UpdateProjectRequest struct {
 	Status      string `json:"status"`
 }
 
-// ListProjects returns a list of projects for the current user
 func (pc *ProjectController) ListProjects(c *gin.Context) {
 	userID, ok := pc.GetCurrentUserID(c)
 	if !ok {
@@ -35,7 +33,6 @@ func (pc *ProjectController) ListProjects(c *gin.Context) {
 		return
 	}
 
-	// Get query parameters for filtering
 	orgIDStr := c.Query("organizationId")
 	var orgID *uuid.UUID
 
@@ -47,7 +44,6 @@ func (pc *ProjectController) ListProjects(c *gin.Context) {
 		}
 		orgID = &id
 
-		// Check if the user has access to the organization
 		if !pc.CheckOwnership(id, userID) {
 			utils.UnauthorizedResponse(c, "You don't have access to this organization")
 			return
@@ -69,7 +65,6 @@ func (pc *ProjectController) ListProjects(c *gin.Context) {
 	utils.SuccessResponse(c, http.StatusOK, "", gin.H{"projects": projects})
 }
 
-// CreateProject creates a new project
 func (pc *ProjectController) CreateProject(c *gin.Context) {
 	var req CreateProjectRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -83,20 +78,17 @@ func (pc *ProjectController) CreateProject(c *gin.Context) {
 		return
 	}
 
-	// Parse organization ID
 	orgID, err := uuid.Parse(req.OrganizationID)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid organization ID format")
 		return
 	}
 
-	// Check if the user has access to the organization
 	if !pc.CheckOwnership(orgID, userID) {
 		utils.UnauthorizedResponse(c, "You don't have access to this organization")
 		return
 	}
 
-	// Create the project
 	project := models.Project{
 		Name:           req.Name,
 		Description:    req.Description,
@@ -112,7 +104,6 @@ func (pc *ProjectController) CreateProject(c *gin.Context) {
 	utils.SuccessResponse(c, http.StatusCreated, "Project created successfully", gin.H{"project": project})
 }
 
-// GetProject returns a single project by ID
 func (pc *ProjectController) GetProject(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -132,7 +123,6 @@ func (pc *ProjectController) GetProject(c *gin.Context) {
 		return
 	}
 
-	// Check if the user has access to the organization
 	if !pc.CheckOwnership(project.OrganizationID, userID) {
 		utils.UnauthorizedResponse(c, "You don't have access to this project")
 		return
@@ -141,7 +131,6 @@ func (pc *ProjectController) GetProject(c *gin.Context) {
 	utils.SuccessResponse(c, http.StatusOK, "", gin.H{"project": project})
 }
 
-// UpdateProject updates a project
 func (pc *ProjectController) UpdateProject(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -167,13 +156,11 @@ func (pc *ProjectController) UpdateProject(c *gin.Context) {
 		return
 	}
 
-	// Check if the user has access to the organization
 	if !pc.CheckOwnership(project.OrganizationID, userID) {
 		utils.UnauthorizedResponse(c, "You don't have access to this project")
 		return
 	}
 
-	// Update fields if provided
 	if req.Name != "" {
 		project.Name = req.Name
 	}
@@ -192,7 +179,6 @@ func (pc *ProjectController) UpdateProject(c *gin.Context) {
 	utils.SuccessResponse(c, http.StatusOK, "Project updated successfully", gin.H{"project": project})
 }
 
-// DeleteProject deletes a project
 func (pc *ProjectController) DeleteProject(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -212,7 +198,6 @@ func (pc *ProjectController) DeleteProject(c *gin.Context) {
 		return
 	}
 
-	// Check if the user has access to the organization
 	if !pc.CheckOwnership(project.OrganizationID, userID) {
 		utils.UnauthorizedResponse(c, "You don't have access to this project")
 		return

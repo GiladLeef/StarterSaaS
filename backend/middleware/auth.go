@@ -9,16 +9,13 @@ import (
 	"github.com/google/uuid"
 )
 
-// AuthRequired is a middleware that checks if the user is authenticated
 func AuthRequired() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Get the Authorization header
 		authHeader := c.GetHeader("Authorization")
 		path := c.Request.URL.Path
 		
 		log.Printf("Auth check for path: %s", path)
 		
-		// Check if header is empty or doesn't start with "Bearer "
 		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
 			log.Printf("Missing or invalid Authorization header: %s", authHeader)
 			utils.UnauthorizedResponse(c, "Authorization header is required")
@@ -26,7 +23,6 @@ func AuthRequired() gin.HandlerFunc {
 			return
 		}
 
-		// Extract the token
 		token := strings.TrimPrefix(authHeader, "Bearer ")
 		if token == "" {
 			log.Printf("Empty token after prefix removal")
@@ -35,7 +31,6 @@ func AuthRequired() gin.HandlerFunc {
 			return
 		}
 
-		// Validate the token
 		userID, err := utils.ValidateToken(token)
 		if err != nil {
 			log.Printf("Token validation failed: %v", err)
@@ -44,7 +39,6 @@ func AuthRequired() gin.HandlerFunc {
 			return
 		}
 
-		// Set the user ID in the context for controllers to use
 		c.Set("userID", userID)
 		log.Printf("Authentication successful for user: %s", userID)
 		
@@ -52,7 +46,6 @@ func AuthRequired() gin.HandlerFunc {
 	}
 }
 
-// GetUserID is a helper function to extract the user ID from the context
 func GetUserID(c *gin.Context) (uuid.UUID, bool) {
 	userID, exists := c.Get("userID")
 	if !exists {
