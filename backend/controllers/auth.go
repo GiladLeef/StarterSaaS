@@ -4,6 +4,7 @@ import (
 	"platform/backend/db"
 	"platform/backend/models"
 	"platform/backend/utils"
+	"platform/backend/fields"
 	"net/http"
 	"os"
 	"time"
@@ -18,24 +19,24 @@ type AuthController struct {
 }
 
 type RegisterRequest struct {
-	Email     string `json:"email" binding:"required,email"`
-	Password  string `json:"password" binding:"required,min=8"`
-	FirstName string `json:"firstName" binding:"required"`
-	LastName  string `json:"lastName" binding:"required"`
+	Email     fields.Email
+	Password  fields.Password
+	FirstName fields.FirstName
+	LastName  fields.LastName
 }
 
 type LoginRequest struct {
-	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required"`
+	Email    fields.Email
+	Password fields.Password
 }
 
 type ForgotPasswordRequest struct {
-	Email string `json:"email" binding:"required,email"`
+	Email fields.Email
 }
 
 type ResetPasswordRequest struct {
-	Token    string `json:"token" binding:"required"`
-	Password string `json:"password" binding:"required,min=8"`
+	Token    fields.Token
+	Password fields.Password
 }
 
 func (ac *AuthController) Register(c *gin.Context) {
@@ -46,23 +47,23 @@ func (ac *AuthController) Register(c *gin.Context) {
 	}
 
 	var existingUser models.User
-	result := db.DB.Where("email = ?", req.Email).First(&existingUser)
+	result := db.DB.Where("email = ?", req.Email.Value).First(&existingUser)
 	if result.RowsAffected > 0 {
 		utils.ErrorResponse(c, http.StatusConflict, "User with this email already exists")
 		return
 	}
 
-	hashedPassword, err := utils.HashPassword(req.Password)
+	hashedPassword, err := utils.HashPassword(req.Password.Value)
 	if err != nil {
 		utils.ServerErrorResponse(c, err)
 		return
 	}
 
 	user := models.User{
-		Email:        req.Email,
+		Email:        req.Email.Value,
 		PasswordHash: hashedPassword,
-		FirstName:    req.FirstName,
-		LastName:     req.LastName,
+		FirstName:    req.FirstName.Value,
+		LastName:     req.LastName.Value,
 		IsActive:     true,
 		Role:         "user",
 	}
@@ -98,13 +99,13 @@ func (ac *AuthController) Login(c *gin.Context) {
 	}
 
 	var user models.User
-	result := db.DB.Where("email = ?", req.Email).First(&user)
+	result := db.DB.Where("email = ?", req.Email.Value).First(&user)
 	if result.RowsAffected == 0 {
 		utils.UnauthorizedResponse(c, "Invalid email or password")
 		return
 	}
 
-	if !utils.CheckPasswordHash(req.Password, user.PasswordHash) {
+	if !utils.CheckPasswordHash(req.Password.Value, user.PasswordHash) {
 		utils.UnauthorizedResponse(c, "Invalid email or password")
 		return
 	}
@@ -159,7 +160,7 @@ func (ac *AuthController) ForgotPassword(c *gin.Context) {
 	}
 
 	var user models.User
-	result := db.DB.Where("email = ?", req.Email).First(&user)
+	result := db.DB.Where("email = ?", req.Email.Value).First(&user)
 	if result.RowsAffected == 0 {
 		utils.SuccessResponse(c, http.StatusOK, "If your email is registered, you will receive a password reset link", nil)
 		return
@@ -200,7 +201,7 @@ func (ac *AuthController) ResetPassword(c *gin.Context) {
 	}
 
 	var resetToken models.PasswordResetToken
-	if err := db.DB.Where("token = ?", req.Token).Preload("User").First(&resetToken).Error; err != nil {
+	if err := db.DB.Where("token = ?", req.Token.Value).Preload("User").First(&resetToken).Error; err != nil {
 		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid or expired reset token")
 		return
 	}
@@ -210,7 +211,7 @@ func (ac *AuthController) ResetPassword(c *gin.Context) {
 		return
 	}
 
-	hashedPassword, err := utils.HashPassword(req.Password)
+	hashedPassword, err := utils.HashPassword(req.Password.Value)
 	if err != nil {
 		utils.ServerErrorResponse(c, err)
 		return

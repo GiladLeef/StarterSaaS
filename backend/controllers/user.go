@@ -5,6 +5,7 @@ import (
 	"platform/backend/middleware"
 	"platform/backend/models"
 	"platform/backend/utils"
+	"platform/backend/fields"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -15,9 +16,9 @@ type UserController struct {
 }
 
 type UpdateUserRequest struct {
-	FirstName string `json:"firstName"`
-	LastName  string `json:"lastName"`
-	Email     string `json:"email" binding:"omitempty,email"`
+	FirstName fields.FirstName
+	LastName  fields.LastName
+	Email     fields.OptionalEmail
 }
 
 func (uc *UserController) GetCurrentUser(c *gin.Context) {
@@ -62,20 +63,20 @@ func (uc *UserController) UpdateCurrentUser(c *gin.Context) {
 		return
 	}
 
-	if req.FirstName != "" {
-		user.FirstName = req.FirstName
+	if req.FirstName.Value != "" {
+		user.FirstName = req.FirstName.Value
 	}
-	if req.LastName != "" {
-		user.LastName = req.LastName
+	if req.LastName.Value != "" {
+		user.LastName = req.LastName.Value
 	}
-	if req.Email != "" && req.Email != user.Email {
+	if req.Email.Value != "" && req.Email.Value != user.Email {
 		var existingUser models.User
-		result := db.DB.Where("email = ? AND id != ?", req.Email, userID).First(&existingUser)
+		result := db.DB.Where("email = ? AND id != ?", req.Email.Value, userID).First(&existingUser)
 		if result.RowsAffected > 0 {
 			utils.ErrorResponse(c, http.StatusConflict, "Email is already taken")
 			return
 		}
-		user.Email = req.Email
+		user.Email = req.Email.Value
 	}
 
 	if result := db.DB.Save(&user); result.Error != nil {

@@ -4,6 +4,7 @@ import (
 	"platform/backend/db"
 	"platform/backend/models"
 	"platform/backend/utils"
+	"platform/backend/fields"
 	"net/http"
 	"time"
 
@@ -16,8 +17,8 @@ type InvitationController struct {
 }
 
 type CreateInvitationRequest struct {
-	OrganizationID string `json:"organizationId" binding:"required"`
-	Email          string `json:"email" binding:"required,email"`
+	OrganizationID fields.OrganizationID
+	Email          fields.Email
 }
 
 func (ic *InvitationController) CreateInvitation(c *gin.Context) {
@@ -27,7 +28,7 @@ func (ic *InvitationController) CreateInvitation(c *gin.Context) {
 		return
 	}
 
-	orgID, err := uuid.Parse(req.OrganizationID)
+	orgID, err := uuid.Parse(req.OrganizationID.Value)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid organization ID")
 		return
@@ -39,7 +40,7 @@ func (ic *InvitationController) CreateInvitation(c *gin.Context) {
 	}
 
 	var user models.User
-	result := db.DB.Where("email = ?", req.Email).First(&user)
+	result := db.DB.Where("email = ?", req.Email.Value).First(&user)
 	if result.RowsAffected > 0 {
 		var count int64
 		db.DB.Table("user_organizations").
@@ -54,7 +55,7 @@ func (ic *InvitationController) CreateInvitation(c *gin.Context) {
 
 	var existingInvitation models.OrganizationInvitation
 	result = db.DB.Where("organization_id = ? AND email = ? AND status = ?", 
-		orgID, req.Email, "pending").
+		orgID, req.Email.Value, "pending").
 		Where("expires_at > ?", time.Now()).
 		First(&existingInvitation)
 	
@@ -66,7 +67,7 @@ func (ic *InvitationController) CreateInvitation(c *gin.Context) {
 	invitation := models.OrganizationInvitation{
 		OrganizationID: orgID,
 		InviterID:      userID,
-		Email:          req.Email,
+		Email:          req.Email.Value,
 		Status:         "pending",
 		ExpiresAt:      time.Now().AddDate(0, 0, 7), 
 	}

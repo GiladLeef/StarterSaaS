@@ -4,6 +4,7 @@ import (
 	"platform/backend/db"
 	"platform/backend/models"
 	"platform/backend/utils"
+	"platform/backend/fields"
 	"net/http"
 	"strings"
 
@@ -16,14 +17,14 @@ type OrganizationController struct {
 }
 
 type CreateOrganizationRequest struct {
-	Name        string `json:"name" binding:"required"`
-	Slug        string `json:"slug"`
-	Description string `json:"description"`
+	Name        fields.Name
+	Slug        fields.Slug
+	Description fields.Description
 }
 
 type UpdateOrganizationRequest struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
+	Name        fields.Name
+	Description fields.Description
 }
 
 func (oc *OrganizationController) ListOrganizations(c *gin.Context) {
@@ -54,30 +55,30 @@ func (oc *OrganizationController) CreateOrganization(c *gin.Context) {
 		return
 	}
 
-	if req.Slug == "" {
-		req.Slug = strings.ToLower(strings.ReplaceAll(req.Name, " ", "-"))
+	if req.Slug.Value == "" {
+		req.Slug.Value = strings.ToLower(strings.ReplaceAll(req.Name.Value, " ", "-"))
 	} else {
-		req.Slug = strings.ToLower(req.Slug)
+		req.Slug.Value = strings.ToLower(req.Slug.Value)
 	}
 
-	baseSlug := req.Slug
+	baseSlug := req.Slug.Value
 	counter := 1
 	
 	for {
 		var existingOrg models.Organization
-		result := oc.FindOne(&existingOrg, "slug = ?", req.Slug)
+		result := oc.FindOne(&existingOrg, "slug = ?", req.Slug.Value)
 		if result.RowsAffected == 0 {
 			break 
 		}
 		
-		req.Slug = baseSlug + "-" + utils.IntToString(counter)
+		req.Slug.Value = baseSlug + "-" + utils.IntToString(counter)
 		counter++
 	}
 
 	org := models.Organization{
-		Name:        req.Name,
-		Slug:        req.Slug,
-		Description: req.Description,
+		Name:        req.Name.Value,
+		Slug:        req.Slug.Value,
+		Description: req.Description.Value,
 	}
 
 	tx := db.DB.Begin()
@@ -151,11 +152,11 @@ func (oc *OrganizationController) UpdateOrganization(c *gin.Context) {
 		return
 	}
 
-	if req.Name != "" {
-		org.Name = req.Name
+	if req.Name.Value != "" {
+		org.Name = req.Name.Value
 	}
-	if req.Description != "" {
-		org.Description = req.Description
+	if req.Description.Value != "" {
+		org.Description = req.Description.Value
 	}
 
 	if err := oc.Update(&org); err != nil {

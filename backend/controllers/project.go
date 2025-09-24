@@ -3,6 +3,7 @@ package controllers
 import (
 	"platform/backend/models"
 	"platform/backend/utils"
+	"platform/backend/fields"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -15,15 +16,15 @@ type ProjectController struct {
 }
 
 type CreateProjectRequest struct {
-	Name           string `json:"name" binding:"required"`
-	Description    string `json:"description"`
-	OrganizationID string `json:"organizationId" binding:"required"`
+	Name           fields.Name
+	Description    fields.Description
+	OrganizationID fields.OrganizationID
 }
 
 type UpdateProjectRequest struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Status      string `json:"status"`
+	Name        fields.Name
+	Description fields.Description
+	Status      fields.Status
 }
 
 func (pc *ProjectController) ListProjects(c *gin.Context) {
@@ -78,7 +79,7 @@ func (pc *ProjectController) CreateProject(c *gin.Context) {
 		return
 	}
 
-	orgID, err := uuid.Parse(req.OrganizationID)
+	orgID, err := uuid.Parse(req.OrganizationID.Value)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid organization ID format")
 		return
@@ -90,8 +91,8 @@ func (pc *ProjectController) CreateProject(c *gin.Context) {
 	}
 
 	project := models.Project{
-		Name:           req.Name,
-		Description:    req.Description,
+		Name:           req.Name.Value,
+		Description:    req.Description.Value,
 		OrganizationID: orgID,
 		Status:         "active",
 	}
@@ -161,14 +162,14 @@ func (pc *ProjectController) UpdateProject(c *gin.Context) {
 		return
 	}
 
-	if req.Name != "" {
-		project.Name = req.Name
+	if req.Name.Value != "" {
+		project.Name = req.Name.Value
 	}
-	if req.Description != "" {
-		project.Description = req.Description
+	if req.Description.Value != "" {
+		project.Description = req.Description.Value
 	}
-	if req.Status != "" {
-		project.Status = req.Status
+	if req.Status.Value != "" {
+		project.Status = req.Status.Value
 	}
 
 	if err := pc.Update(&project); err != nil {
