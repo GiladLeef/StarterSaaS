@@ -16,7 +16,6 @@ type User struct {
 	IsActive     bool           `gorm:"default:true" json:"isActive"`
 	Role         string         `gorm:"type:varchar(16);default:'user'" json:"role"`
 	Organizations []Organization `gorm:"many2many:user_organizations;" json:"organizations,omitempty"`
-	ApiKeys      []ApiKey       `gorm:"foreignKey:UserID" json:"apiKeys,omitempty"`
 	CreatedAt    time.Time      `json:"createdAt"`
 	UpdatedAt    time.Time      `json:"updatedAt"`
 	DeletedAt    gorm.DeletedAt `gorm:"index" json:"-"`

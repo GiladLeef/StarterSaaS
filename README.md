@@ -11,7 +11,6 @@ This is a generic, modern and simple full SaaS backend + frontend starter templa
 - User management
 - Organization management
 - Project management
-- API key management
 - Subscription management
 
 ## Prerequisites
@@ -171,12 +170,6 @@ Database migrations are handled automatically by GORM when the application start
 - GET `/api/v1/projects/:id` - Get project
 - PUT `/api/v1/projects/:id` - Update project
 - DELETE `/api/v1/projects/:id` - Delete project
-
-### API Keys
-
-- GET `/api/v1/api-keys` - List API keys
-- POST `/api/v1/api-keys` - Create API key
-- DELETE `/api/v1/api-keys/:id` - Delete API key
 
 ### Subscriptions
 

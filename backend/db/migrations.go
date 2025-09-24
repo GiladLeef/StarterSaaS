@@ -16,7 +16,6 @@ func RunMigrations() error {
 		&models.Organization{},
 		&models.Project{},
 		&models.Subscription{},
-		&models.ApiKey{},
 		&models.OrganizationInvitation{},
 		&models.PasswordResetToken{},
 	)

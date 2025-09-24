@@ -370,45 +370,6 @@ export const invitationsApi = {
  */
 export const projectsApi = createCrudApi<any>('/api/v1/projects', 'project');
 
-/**
- * API Keys API functions
- */
-export const apiKeysApi = {
-  list: async () => {
-    try {
-      const response = await apiFetch<{ apiKeys: any[] }>('/api/v1/api-keys');
-      return response;
-    } catch (error) {
-      handleApiError('list API keys', error);
-      throw error;
-    }
-  },
-
-  create: async (name: string) => {
-    try {
-      const response = await apiFetch<{ apiKey: any }>('/api/v1/api-keys', {
-        method: 'POST',
-        body: { name },
-      });
-      return response;
-    } catch (error) {
-      handleApiError('create API key', error);
-      throw error;
-    }
-  },
-
-  delete: async (id: string) => {
-    try {
-      const response = await apiFetch(`/api/v1/api-keys/${id}`, {
-        method: 'DELETE',
-      });
-      return response;
-    } catch (error) {
-      handleApiError('delete API key', error);
-      throw error;
-    }
-  },
-};
 
 /**
  * Subscriptions API functions

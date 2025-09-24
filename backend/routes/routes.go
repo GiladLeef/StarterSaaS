@@ -15,7 +15,6 @@ func SetupRoutes(r *gin.Engine) {
 	userController := &controllers.UserController{}
 	orgController := &controllers.OrganizationController{}
 	projectController := &controllers.ProjectController{}
-	apiKeyController := &controllers.ApiKeyController{}
 	subscriptionController := &controllers.SubscriptionController{}
 	invitationController := &controllers.InvitationController{}
 
@@ -67,13 +66,6 @@ func SetupRoutes(r *gin.Engine) {
 				projects.DELETE("/:id", projectController.DeleteProject)
 			}
 
-			// API key routes
-			apiKeys := protected.Group("/api-keys")
-			{
-				apiKeys.GET("", apiKeyController.ListApiKeys)
-				apiKeys.POST("", apiKeyController.CreateApiKey)
-				apiKeys.DELETE("/:id", apiKeyController.DeleteApiKey)
-			}
 
 			// Subscription routes
 			subscriptions := protected.Group("/subscriptions")
