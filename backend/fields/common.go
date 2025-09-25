@@ -16,18 +16,6 @@ func (e Email) String() string {
 	return e.Value
 }
 
-type OptionalEmail struct {
-	Value string `json:"email" binding:"omitempty,email"`
-}
-
-func (e *OptionalEmail) UnmarshalJSON(data []byte) error {
-	return json.Unmarshal(data, &e.Value)
-}
-
-func (e OptionalEmail) String() string {
-	return e.Value
-}
-
 type Password struct {
 	Value string `json:"password" binding:"required,min=8"`
 }

@@ -18,7 +18,7 @@ type UserController struct {
 type UpdateUserRequest struct {
 	FirstName fields.FirstName
 	LastName  fields.LastName
-	Email     fields.OptionalEmail
+	Email     fields.Email
 }
 
 func (uc *UserController) GetCurrentUser(c *gin.Context) {
