@@ -23,15 +23,17 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { title: "Home", href: "/", requiresAuth: false },
   { title: "Dashboard", href: "/dashboard", requiresAuth: true },
   { title: "Organizations", href: "/organizations", requiresAuth: true },
   { title: "Projects", href: "/projects", requiresAuth: true },
 ];
 
 const adminNavItems: NavItem[] = [
-  { title: "Home", href: "/", requiresAuth: false },
   { title: "Admin Dashboard", href: "/admin", requiresAuth: true },
+];
+
+const publicNavItems: NavItem[] = [
+  { title: "Home", href: "/", requiresAuth: false },
 ];
 
 export function MainNav() {
@@ -57,22 +59,23 @@ export function MainNav() {
           </Link>
 
           <nav className="hidden md:flex items-center space-x-6 text-sm font-medium">
-            {navItems
-              .filter(item => !item.requiresAuth || isAuthenticated)
-              .map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    "transition-colors hover:text-foreground/80",
-                    pathname === item.href || pathname?.startsWith(item.href + "/")
-                      ? "text-foreground font-semibold"
-                      : "text-foreground/60"
-                  )}
-                >
-                  {item.title}
-                </Link>
-              ))}
+            {(isAuthenticated 
+              ? (user?.role === 'admin' ? adminNavItems : navItems)
+              : publicNavItems
+            ).map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "transition-colors hover:text-foreground/80",
+                  pathname === item.href || pathname?.startsWith(item.href + "/")
+                    ? "text-foreground font-semibold"
+                    : "text-foreground/60"
+                )}
+              >
+                {item.title}
+              </Link>
+            ))}
           </nav>
         </div>
 
@@ -95,15 +98,30 @@ export function MainNav() {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
-                  <DropdownMenuItem asChild>
-                    <Link href="/profile">Profile</Link>
-                  </DropdownMenuItem>
-                  {user?.role === 'admin' && (
-                    <DropdownMenuItem asChild>
-                      <Link href="/admin" className="text-primary font-semibold">
-                        🛡️ Admin Panel
-                      </Link>
-                    </DropdownMenuItem>
+                  {user?.role === 'admin' ? (
+                    <>
+                      <DropdownMenuItem asChild>
+                        <Link href="/admin">🛡️ Admin Dashboard</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/admin/resources/user">Manage Users</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/admin/resources/organization">Manage Organizations</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/admin/resources/project">Manage Projects</Link>
+                      </DropdownMenuItem>
+                    </>
+                  ) : (
+                    <>
+                      <DropdownMenuItem asChild>
+                        <Link href="/profile">Profile</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/settings">Settings</Link>
+                      </DropdownMenuItem>
+                    </>
                   )}
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />

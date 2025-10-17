@@ -1,161 +1,157 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import React from "react";
+import { useParams, useRouter } from "next/navigation";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useParams, useRouter } from "next/navigation";
-import { useAutoFetch } from "@/app/hooks/auto";
-import { useState } from "react";
-import { formatRelativeTime } from "@/app/utils/dates";
 
 const apiFetch = async (url: string) => {
   const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}${url}`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    headers: {
+      'Authorization': token ? `Bearer ${token}` : '',
+      'Content-Type': 'application/json'
+    },
   });
   if (!res.ok) throw new Error('Failed to fetch');
   return res.json();
 };
 
-interface FieldMetadata {
-  name: string;
-  type: string;
-  label: string;
-  required: boolean;
-  editable: boolean;
-}
-
-interface ResourceMetadata {
-  name: string;
-  pluralName: string;
-  capabilities: string[];
-  fields: FieldMetadata[];
-  searchFields: string[];
-  displayFields: string[];
-}
-
-export default function AdminResourcePage() {
+export default function ResourceManagementPage() {
   const params = useParams();
   const router = useRouter();
   const resource = params.resource as string;
-  const [searchTerm, setSearchTerm] = useState("");
 
-  const { data: responseData, isLoading, refetch } = useAutoFetch<any>(
-    () => apiFetch(`/api/v1/admin/resources/${resource}`),
-    resource + "s"
-  );
+  const [data, setData] = React.useState<any[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = React.useState("");
+
+  React.useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        const response = await apiFetch(`/api/v1/admin/resources/${resource}`);
+        
+        if (response.success && response.data) {
+          setData(response.data.data || []);
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load resource data');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchData();
+  }, [resource]);
+
+  const filteredData = React.useMemo(() => {
+    if (!searchTerm) return data;
+    
+    return data.filter((item) => {
+      const searchLower = searchTerm.toLowerCase();
+      return Object.values(item).some((value) =>
+        String(value).toLowerCase().includes(searchLower)
+      );
+    });
+  }, [data, searchTerm]);
 
   if (isLoading) {
     return (
       <div className="flex min-h-screen w-full flex-col items-center justify-center">
-        <p>Loading {resource} data...</p>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>Loading {resource} data...</p>
+        </div>
       </div>
     );
   }
 
-  const items = responseData || [];
-  const metadata: ResourceMetadata = (responseData as any)?.[0]?.metadata;
-
-  const filteredItems = items.filter((item: any) => {
-    if (!searchTerm) return true;
-    const searchLower = searchTerm.toLowerCase();
-    return metadata?.searchFields?.some((field) =>
-      String(item[field] || "").toLowerCase().includes(searchLower)
+  if (error) {
+    return (
+      <div className="flex min-h-screen w-full flex-col items-center justify-center">
+        <div className="text-center">
+          <p className="text-destructive mb-4">{error}</p>
+          <Button onClick={() => window.location.reload()}>Retry</Button>
+        </div>
+      </div>
     );
-  });
+  }
 
-  const getDisplayValue = (item: any, fieldName: string) => {
-    const value = item[fieldName];
-    const field = metadata?.fields?.find((f) => f.name === fieldName);
-    
-    if (value === null || value === undefined) return "-";
-    if (field?.type?.includes("time.Time")) return formatRelativeTime(value);
-    if (typeof value === "boolean") return value ? "Yes" : "No";
-    if (typeof value === "object") return JSON.stringify(value);
-    return String(value);
-  };
+  const resourceName = resource.charAt(0).toUpperCase() + resource.slice(1);
+  const columns = data.length > 0 ? Object.keys(data[0]).filter(key => 
+    !['createdAt', 'updatedAt', 'deletedAt', 'passwordHash'].includes(key)
+  ) : [];
 
   return (
     <div className="flex min-h-screen w-full flex-col">
       <div className="container flex flex-col gap-6 py-8">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="space-y-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => router.push("/admin")}
-              className="mb-2"
-            >
-              ← Back to Admin
-            </Button>
-            <h2 className="text-2xl font-bold tracking-tight capitalize">
-              Manage {metadata?.pluralName || resource}
-            </h2>
+            <h2 className="text-2xl font-bold tracking-tight">Manage {resourceName}s</h2>
             <p className="text-muted-foreground">
-              {items.length} total items
+              View and manage all {resource}s in the system.
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Input
-              placeholder={`Search ${metadata?.searchFields?.join(", ") || ""}...`}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="max-w-sm"
-            />
-            <Button onClick={refetch}>Refresh</Button>
+            <Button variant="outline" onClick={() => router.push('/admin')}>
+              Back to Admin
+            </Button>
           </div>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle className="capitalize">{metadata?.pluralName || resource} List</CardTitle>
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div>
+                <CardTitle>{resourceName}s</CardTitle>
+                <CardDescription>
+                  Total: {data.length} {resource}s
+                </CardDescription>
+              </div>
+              <div className="w-full md:w-64">
+                <Input
+                  placeholder={`Search ${resource}s...`}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
-            {filteredItems.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">
-                No items found
-              </p>
+            {filteredData.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                {searchTerm ? `No ${resource}s match your search.` : `No ${resource}s found.`}
+              </div>
             ) : (
-              <div className="overflow-x-auto">
+              <div className="rounded-md border overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      {metadata?.displayFields?.map((field) => (
-                        <TableHead key={field} className="capitalize">
-                          {metadata.fields.find((f) => f.name === field)?.label || field}
+                      {columns.map((column) => (
+                        <TableHead key={column} className="capitalize">
+                          {column.replace(/([A-Z])/g, ' $1').trim()}
                         </TableHead>
                       ))}
-                      <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredItems.map((item: any) => (
-                      <TableRow key={item.id || item.ID}>
-                        {metadata?.displayFields?.map((field) => (
-                          <TableCell key={field}>
-                            {getDisplayValue(item, field)}
+                    {filteredData.map((item, index) => (
+                      <TableRow key={item.id || index}>
+                        {columns.map((column) => (
+                          <TableCell key={column}>
+                            {typeof item[column] === 'boolean'
+                              ? item[column] ? 'Yes' : 'No'
+                              : typeof item[column] === 'object' && item[column] !== null
+                              ? JSON.stringify(item[column])
+                              : String(item[column] ?? '-')}
                           </TableCell>
                         ))}
-                        <TableCell>
-                          <div className="flex gap-2">
-                            {metadata?.capabilities?.includes("view") && (
-                              <Button variant="outline" size="sm">
-                                View
-                              </Button>
-                            )}
-                            {metadata?.capabilities?.includes("edit") && (
-                              <Button variant="outline" size="sm">
-                                Edit
-                              </Button>
-                            )}
-                            {metadata?.capabilities?.includes("delete") && (
-                              <Button variant="destructive" size="sm">
-                                Delete
-                              </Button>
-                            )}
-                          </div>
-                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -164,38 +160,7 @@ export default function AdminResourcePage() {
             )}
           </CardContent>
         </Card>
-
-        {metadata && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Resource Schema</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Field</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Required</TableHead>
-                    <TableHead>Editable</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {metadata.fields.map((field) => (
-                    <TableRow key={field.name}>
-                      <TableCell className="font-medium">{field.label}</TableCell>
-                      <TableCell className="font-mono text-sm">{field.type}</TableCell>
-                      <TableCell>{field.required ? "Yes" : "No"}</TableCell>
-                      <TableCell>{field.editable ? "Yes" : "No"}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        )}
       </div>
     </div>
   );
 }
-

@@ -29,6 +29,12 @@ export default function DashboardPage() {
   const router = useRouter();
   const { user } = useAuth();
   
+  // Redirect admins to admin panel
+  if (user?.role === 'admin') {
+    router.push('/admin');
+    return null;
+  }
+  
   const { 
     data: organizations, 
     isLoading: orgsLoading, 
