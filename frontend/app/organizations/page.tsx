@@ -7,7 +7,7 @@ import { useResourceList } from "@/app/hooks/resources";
 import { useFormDialog } from "@/app/hooks/dialog";
 import { CreateDialog } from "@/app/components/forms/dialog";
 import { organizationsApi, invitationsApi } from "@/app/api/fetcher";
-import { useState, useEffect } from "react";
+import { useAutoFetch } from "@/app/hooks/auto";
 
 interface Organization {
   id: string;
@@ -33,7 +33,11 @@ export default function OrganizationsPage() {
     refetch,
   } = useResourceList<Organization>(organizationsApi, "organizations");
 
-  const [invitations, setInvitations] = useState<Invitation[]>([]);
+  const { data: invitations, refetch: refetchInvitations } = useAutoFetch<Invitation>(
+    () => invitationsApi.list(),
+    "invitations",
+    { onError: () => console.error("Failed to load invitations") }
+  );
 
   const dialog = useFormDialog({
     name: "",
@@ -41,25 +45,12 @@ export default function OrganizationsPage() {
     description: "",
   });
 
-  // Auto-generate slug from name
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     dialog.handleChange(e);
     if (e.target.name === "name") {
       dialog.updateField("slug", e.target.value.toLowerCase().replace(/\s+/g, "-"));
     }
   };
-
-  useEffect(() => {
-    const fetchInvitations = async () => {
-      try {
-        const response = await invitationsApi.list();
-        setInvitations(response.data?.invitations || []);
-      } catch (err) {
-        console.error("Failed to load invitations:", err);
-      }
-    };
-    fetchInvitations();
-  }, []);
 
   const handleCreate = async () => {
     await dialog.handleSubmit(async (data) => {
@@ -71,8 +62,7 @@ export default function OrganizationsPage() {
   const handleAcceptInvitation = async (invitationId: string) => {
     try {
       await invitationsApi.accept(invitationId);
-      setInvitations((prev) => prev.filter((inv) => inv.id !== invitationId));
-      await refetch();
+      await Promise.all([refetchInvitations(), refetch()]);
     } catch (err) {
       setError("Failed to accept invitation");
     }
@@ -81,7 +71,7 @@ export default function OrganizationsPage() {
   const handleDeclineInvitation = async (invitationId: string) => {
     try {
       await invitationsApi.decline(invitationId);
-      setInvitations((prev) => prev.filter((inv) => inv.id !== invitationId));
+      await refetchInvitations();
     } catch (err) {
       setError("Failed to decline invitation");
     }

@@ -26,7 +26,6 @@ func ListWithOrgFilter[T any](
 		return
 	}
 
-	// Parse optional organization filter
 	var orgID *uuid.UUID
 	if orgIDStr := c.Query("organizationId"); orgIDStr != "" {
 		id, err := uuid.Parse(orgIDStr)
@@ -35,7 +34,6 @@ func ListWithOrgFilter[T any](
 			return
 		}
 
-		// Check access to this organization
 		if !bc.CheckOwnership(id, userID) {
 			UnauthorizedResponse(c, "You don't have access to this organization")
 			return
@@ -43,7 +41,6 @@ func ListWithOrgFilter[T any](
 		orgID = &id
 	}
 
-	// Get user's organization IDs
 	var orgIDs []uuid.UUID
 	if err := db.DB.Table("user_organizations").
 		Where("user_id = ?", userID).
@@ -52,7 +49,6 @@ func ListWithOrgFilter[T any](
 		return
 	}
 
-	// Build query for resources
 	var resources []T
 	query := db.DB.Where("organization_id IN ?", orgIDs)
 

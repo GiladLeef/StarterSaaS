@@ -35,7 +35,6 @@ const publicRoutes = [
   "/privacy",
 ];
 
-// Check if the current route is public
 const isPublicRoutePath = (pathname: string | null): boolean => {
   if (!pathname) return false;
   return publicRoutes.some(route => 
@@ -47,7 +46,6 @@ const isPublicRoutePath = (pathname: string | null): boolean => {
 const extractUserFromResponse = (userData: any): User | null => {
   if (!userData) return null;
   
-  // Handle different response formats
   const userObject = userData.user || userData;
   
   if (userObject && userObject.id) {
@@ -57,7 +55,6 @@ const extractUserFromResponse = (userData: any): User | null => {
   return null;
 };
 
-// Handle authentication flow after successful login/register
 const handleAuthSuccess = (router: any, redirectPath = "/dashboard") => {
   // Add a small delay to ensure token is saved before redirecting
   setTimeout(() => {
@@ -71,17 +68,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
-  // Check if the current route is public
   const isPublicRoute = isPublicRoutePath(pathname);
   
-  // Handle redirect for protected routes when not authenticated
   const redirectIfUnauthorized = () => {
     if (!isPublicRoute) {
       router.push("/login");
     }
   };
   
-  // Check authentication status on mount and route changes
   useEffect(() => {
     const checkAuth = async () => {
       try {

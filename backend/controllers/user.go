@@ -24,60 +24,52 @@ type UpdateUserRequest struct {
 func (uc *UserController) GetCurrentUser(c *gin.Context) {
 	userID, ok := middleware.GetUserID(c)
 	if !ok {
-		utils.UnauthorizedResponse(c, "")
+		utils.Respond(c, utils.StatusUnauthorized, "Unauthorized", nil)
 		return
 	}
 
-	var user models.User
-	if result := db.DB.First(&user, userID); result.Error != nil {
-		utils.NotFoundResponse(c, "User not found")
+	user, err := utils.Query[models.User]("id = ?", userID)
+	if err != nil {
+		utils.Respond(c, utils.StatusNotFound, "User not found", nil)
 		return
 	}
 
-	utils.SuccessResponse(c, http.StatusOK, "", utils.ToPublicJSON(user))
+	utils.Respond(c, utils.StatusOK, "", utils.ToPublicJSON(*user))
 }
 
 func (uc *UserController) UpdateCurrentUser(c *gin.Context) {
-	var req UpdateUserRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.ValidationErrorResponse(c, err)
+	req, ok := utils.BindAndValidate[UpdateUserRequest](c)
+	if !ok {
 		return
 	}
 
 	userID, ok := middleware.GetUserID(c)
 	if !ok {
-		utils.UnauthorizedResponse(c, "")
+		utils.Respond(c, utils.StatusUnauthorized, "Unauthorized", nil)
 		return
 	}
 
-	var user models.User
-	if result := db.DB.First(&user, userID); result.Error != nil {
-		utils.NotFoundResponse(c, "User not found")
+	user, err := utils.Query[models.User]("id = ?", userID)
+	if err != nil {
+		utils.Respond(c, utils.StatusNotFound, "User not found", nil)
 		return
 	}
 
-	if req.FirstName.Value != "" {
-		user.FirstName = req.FirstName.Value
-	}
-	if req.LastName.Value != "" {
-		user.LastName = req.LastName.Value
-	}
+	utils.UpdateStringField(&user.FirstName, req.FirstName.Value)
+	utils.UpdateStringField(&user.LastName, req.LastName.Value)
+	
 	if req.Email.Value != "" && req.Email.Value != user.Email {
-		var existingUser models.User
-		result := db.DB.Where("email = ? AND id != ?", req.Email.Value, userID).First(&existingUser)
-		if result.RowsAffected > 0 {
-			utils.ErrorResponse(c, http.StatusConflict, "Email is already taken")
+		if !utils.MustNotExist[models.User](c, "Email is already taken", "email = ? AND id != ?", req.Email.Value, userID) {
 			return
 		}
 		user.Email = req.Email.Value
 	}
 
-	if result := db.DB.Save(&user); result.Error != nil {
-		utils.ServerErrorResponse(c, result.Error)
+	if !utils.HandleCRUD(c, "update", user, "user") {
 		return
 	}
 
-	utils.SuccessResponse(c, http.StatusOK, "User updated successfully", gin.H{"user": utils.ToPublicJSON(user)})
+	utils.Respond(c, utils.StatusOK, "User updated successfully", gin.H{"user": utils.ToPublicJSON(*user)})
 }
 
 func (uc *UserController) DeleteCurrentUser(c *gin.Context) {

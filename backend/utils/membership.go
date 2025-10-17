@@ -9,7 +9,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// CheckOrganizationMembership checks if a user is a member of an organization
 func CheckOrganizationMembership(userID, organizationID uuid.UUID) (bool, error) {
 	var membership models.UserOrganization
 	err := db.DB.Where("user_id = ? AND organization_id = ?", userID, organizationID).
@@ -83,7 +82,6 @@ func GetUserOrganizations(userID uuid.UUID) ([]models.Organization, error) {
 	return organizations, err
 }
 
-// CheckProjectAccess checks if a user has access to a project via organization membership
 func CheckProjectAccess(userID, projectID uuid.UUID) (bool, error) {
 	var project models.Project
 	err := db.DB.

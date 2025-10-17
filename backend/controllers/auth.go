@@ -41,19 +41,18 @@ type ResetPasswordRequest struct {
 }
 
 func (ac *AuthController) Register(c *gin.Context) {
-	var req RegisterRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.ValidationErrorResponse(c, err)
+	req, ok := utils.BindAndValidate[RegisterRequest](c)
+	if !ok {
 		return
 	}
 
-	if !utils.RequireNotExists[models.User](c, "User with this email already exists", "email = ?", req.Email.Value) {
+	if !utils.MustNotExist[models.User](c, "User with this email already exists", "email = ?", req.Email.Value) {
 		return
 	}
 
 	hashedPassword, err := utils.HashPassword(req.Password.Value)
 	if err != nil {
-		utils.ServerErrorResponse(c, err)
+		utils.RespondWithError(c, utils.StatusError, err, "Password hashing failed")
 		return
 	}
 
@@ -66,51 +65,48 @@ func (ac *AuthController) Register(c *gin.Context) {
 		Role:         "user",
 	}
 
-	if result := db.DB.Create(&user); result.Error != nil {
-		utils.ServerErrorResponse(c, result.Error)
+	if !utils.HandleCRUD(c, "create", &user, "user") {
 		return
 	}
 
 	token, err := utils.GenerateToken(user.ID)
 	if err != nil {
-		utils.ServerErrorResponse(c, err)
+		utils.RespondWithError(c, utils.StatusError, err, "Token generation failed")
 		return
 	}
 
-	utils.SuccessResponse(c, http.StatusCreated, "User registered successfully", gin.H{
+	utils.Respond(c, utils.StatusCreated, "User registered successfully", gin.H{
 		"user":  utils.ToPublicJSON(user),
 		"token": token,
 	})
 }
 
 func (ac *AuthController) Login(c *gin.Context) {
-	var req LoginRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.ValidationErrorResponse(c, err)
+	req, ok := utils.BindAndValidate[LoginRequest](c)
+	if !ok {
 		return
 	}
 
-	var user models.User
-	result := db.DB.Where("email = ?", req.Email.Value).First(&user)
-	if result.RowsAffected == 0 {
-		utils.UnauthorizedResponse(c, "Invalid email or password")
+	user, err := utils.Query[models.User]("email = ?", req.Email.Value)
+	if err != nil {
+		utils.Respond(c, utils.StatusUnauthorized, "Invalid email or password", nil)
 		return
 	}
 
 	if !utils.CheckPasswordHash(req.Password.Value, user.PasswordHash) {
-		utils.UnauthorizedResponse(c, "Invalid email or password")
+		utils.Respond(c, utils.StatusUnauthorized, "Invalid email or password", nil)
 		return
 	}
 
 	token, err := utils.GenerateToken(user.ID)
 	if err != nil {
-		utils.ServerErrorResponse(c, err)
+		utils.RespondWithError(c, utils.StatusError, err, "Token generation failed")
 		return
 	}
 
-	utils.SuccessResponse(c, http.StatusOK, "Login successful", gin.H{
+	utils.Respond(c, utils.StatusOK, "Login successful", gin.H{
 		"token": token,
-		"user":  utils.ToPublicJSON(user),
+		"user":  utils.ToPublicJSON(*user),
 	})
 }
 

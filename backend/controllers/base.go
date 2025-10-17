@@ -56,11 +56,8 @@ func (b *BaseController) Delete(model interface{}) error {
 }
 
 func (b *BaseController) CheckOwnership(orgID uuid.UUID, userID uuid.UUID) bool {
-	var count int64
-	db.DB.Table("user_organizations").
-		Where("organization_id = ? AND user_id = ?", orgID, userID).
-		Count(&count)
-	return count > 0
+	isMember, _ := utils.CheckOrganizationMembership(userID, orgID)
+	return isMember
 }
 
 func (b *BaseController) FindWhere(dest interface{}, query interface{}, args ...interface{}) *gorm.DB {

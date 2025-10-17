@@ -8,7 +8,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// ParseUUID parses a UUID from route parameters with automatic error response
 func ParseUUID(c *gin.Context, paramName, resourceName string) (uuid.UUID, bool) {
 	id, err := uuid.Parse(c.Param(paramName))
 	if err != nil {
@@ -18,7 +17,6 @@ func ParseUUID(c *gin.Context, paramName, resourceName string) (uuid.UUID, bool)
 	return id, true
 }
 
-// ParseOptionalUUID parses an optional UUID from query parameters
 func ParseOptionalUUID(c *gin.Context, param, resourceName string) (*uuid.UUID, error) {
 	str := c.Query(param)
 	if str == "" {

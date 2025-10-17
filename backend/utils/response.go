@@ -1,8 +1,6 @@
 package utils
 
 import (
-	"net/http"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -14,42 +12,39 @@ type Response struct {
 }
 
 func SuccessResponse(c *gin.Context, status int, message string, data interface{}) {
-	c.JSON(status, Response{
-		Success: true,
-		Message: message,
-		Data:    data,
-	})
+	var payload gin.H
+	if data != nil {
+		if h, ok := data.(gin.H); ok {
+			payload = h
+		} else {
+			payload = gin.H{"data": data}
+		}
+	}
+	Respond(c, HTTPStatus(status), message, payload)
 }
 
 func ErrorResponse(c *gin.Context, status int, message string) {
-	c.JSON(status, Response{
-		Success: false,
-		Error:   message,
-	})
+	Respond(c, HTTPStatus(status), message, nil)
 }
 
 func ValidationErrorResponse(c *gin.Context, err error) {
-	ErrorResponse(c, http.StatusBadRequest, err.Error())
+	Respond(c, StatusBadRequest, err.Error(), nil)
 }
 
 func UnauthorizedResponse(c *gin.Context, message string) {
 	if message == "" {
 		message = "Unauthorized"
 	}
-	ErrorResponse(c, http.StatusUnauthorized, message)
+	Respond(c, StatusUnauthorized, message, nil)
 }
 
 func NotFoundResponse(c *gin.Context, message string) {
 	if message == "" {
 		message = "Resource not found"
 	}
-	ErrorResponse(c, http.StatusNotFound, message)
+	Respond(c, StatusNotFound, message, nil)
 }
 
 func ServerErrorResponse(c *gin.Context, err error) {
-	message := "Internal server error"
-	if err != nil {
-		message = err.Error()
-	}
-	ErrorResponse(c, http.StatusInternalServerError, message)
+	RespondWithError(c, StatusError, err, "Internal server error")
 } 

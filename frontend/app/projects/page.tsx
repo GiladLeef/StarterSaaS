@@ -13,6 +13,7 @@ import { projectsApi, organizationsApi } from "@/app/api/fetcher";
 import { formatRelativeTime } from "@/app/utils/dates";
 import { LoadingPage } from "@/app/components/ui/loading";
 import { ErrorAlert } from "@/app/components/ui/error";
+import { useStatusCounts, useGroupByOrg } from "@/app/hooks/auto";
 
 interface Organization {
   id: string;
@@ -70,21 +71,8 @@ export default function ProjectsPage() {
     return <LoadingPage message="Loading projects..." />;
   }
 
-  const statusCounts = {
-    active: projects.filter((p) => p.status?.toLowerCase() === "active").length,
-    completed: projects.filter((p) => p.status?.toLowerCase() === "completed").length,
-    inProgress: projects.filter(
-      (p) =>
-        p.status?.toLowerCase() === "in progress" ||
-        p.status?.toLowerCase() === "in-progress"
-    ).length,
-  };
-
-  const projectsByOrg = organizations.map((org) => {
-    const count = projects.filter((p) => p.organizationId === org.id).length;
-    const percentage = projects.length > 0 ? (count / projects.length) * 100 : 0;
-    return { ...org, count, percentage };
-  });
+  const statusCounts = useStatusCounts(projects);
+  const projectsByOrg = useGroupByOrg(projects, organizations);
 
   return (
     <div className="flex min-h-screen w-full flex-col">

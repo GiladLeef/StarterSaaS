@@ -35,7 +35,6 @@ export default function ProtectedRoute({ children }: { children: ReactNode }) {
     );
   }
 
-  // If public route, or authenticated on a protected route, show content
   if (isPublicRoute || isAuthenticated) {
     return <>{children}</>;
   }

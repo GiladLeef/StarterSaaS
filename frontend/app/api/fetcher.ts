@@ -86,7 +86,6 @@ export async function apiFetch<T = any>(
   // Parse the response
   const responseData = await response.json();
 
-  // Handle error responses
   if (!response.ok || !responseData.success) {
     throw new Error(responseData.error || 'An error occurred');
   }
@@ -169,7 +168,6 @@ export const authApi = {
     try {
       const response = await apiFetch<{ user: any }>('/api/v1/users/me');
       
-      // Handle different response formats
       if (response && response.success && !response.data) {
         return { user: response };
       }

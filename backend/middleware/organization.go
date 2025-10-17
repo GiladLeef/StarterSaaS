@@ -20,7 +20,6 @@ func RequireOrganizationAccess() gin.HandlerFunc {
 			return
 		}
 
-		// Get user ID from context (set by AuthRequired middleware)
 		userID, exists := c.Get("userID")
 		if !exists {
 			utils.UnauthorizedResponse(c, "User not authenticated")
@@ -35,7 +34,6 @@ func RequireOrganizationAccess() gin.HandlerFunc {
 			return
 		}
 
-		// Check if user has access to this organization
 		var count int64
 		err = db.DB.Table("user_organizations").
 			Where("user_id = ? AND organization_id = ?", userUUID, orgID).
@@ -64,7 +62,6 @@ func RequireProjectAccess() gin.HandlerFunc {
 			return
 		}
 
-		// Get user ID from context
 		userID, exists := c.Get("userID")
 		if !exists {
 			utils.UnauthorizedResponse(c, "User not authenticated")
@@ -79,7 +76,6 @@ func RequireProjectAccess() gin.HandlerFunc {
 			return
 		}
 
-		// Check if user has access to this project through organization membership
 		var count int64
 		err = db.DB.Table("projects").
 			Joins("JOIN user_organizations ON projects.organization_id = user_organizations.organization_id").

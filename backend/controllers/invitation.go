@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -23,15 +22,13 @@ type CreateInvitationRequest struct {
 }
 
 func (ic *InvitationController) CreateInvitation(c *gin.Context) {
-	var req CreateInvitationRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.ValidationErrorResponse(c, err)
+	req, ok := utils.BindAndValidate[CreateInvitationRequest](c)
+	if !ok {
 		return
 	}
 
-	orgID, err := uuid.Parse(req.OrganizationID.Value)
-	if err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid organization ID")
+	orgID, ok := utils.GetUUID(c, req.OrganizationID.Value)
+	if !ok {
 		return
 	}
 
@@ -40,16 +37,14 @@ func (ic *InvitationController) CreateInvitation(c *gin.Context) {
 		return
 	}
 
-	var user models.User
-	result := db.DB.Where("email = ?", req.Email.Value).First(&user)
-	if result.RowsAffected > 0 {
+	user, _ := utils.Query[models.User]("email = ?", req.Email.Value)
+	if user != nil {
 		if !utils.RequireNotOrganizationMember(c, user.ID, orgID) {
 			return
 		}
 	}
 
-	// Check for existing pending invitation
-	if !utils.RequireNotExists[models.OrganizationInvitation](c, 
+	if !utils.MustNotExist[models.OrganizationInvitation](c, 
 		"An invitation is already pending for this email",
 		"organization_id = ? AND email = ? AND status = ? AND expires_at > ?",
 		orgID, req.Email.Value, "pending", time.Now()) {
@@ -64,12 +59,11 @@ func (ic *InvitationController) CreateInvitation(c *gin.Context) {
 		ExpiresAt:      time.Now().AddDate(0, 0, 7), 
 	}
 
-	if err := ic.Create(&invitation); err != nil {
-		utils.ServerErrorResponse(c, err)
+	if !utils.HandleCRUD(c, "create", &invitation, "invitation") {
 		return
 	}
 
-	utils.SuccessResponse(c, http.StatusCreated, "Invitation sent successfully", gin.H{"invitation": invitation})
+	utils.Respond(c, utils.StatusCreated, "Invitation sent successfully", gin.H{"invitation": invitation})
 }
 
 func (ic *InvitationController) ListInvitations(c *gin.Context) {
@@ -118,7 +112,6 @@ func (ic *InvitationController) AcceptInvitation(c *gin.Context) {
 		if err := tx.Save(&invitation).Error; err != nil {
 			return err
 		}
-		// Add user to organization using helper
 		return utils.AddOrganizationMember(user.ID, invitation.OrganizationID)
 	}) {
 		return

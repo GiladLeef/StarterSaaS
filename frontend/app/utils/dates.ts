@@ -75,9 +75,7 @@ export function formatDateRange(
   const start = startDate instanceof Date ? startDate : new Date(startDate);
   const end = endDate instanceof Date ? endDate : new Date(endDate);
   
-  // If same year
   if (start.getFullYear() === end.getFullYear()) {
-    // If same month
     if (start.getMonth() === end.getMonth()) {
       return `${start.getDate()} - ${end.getDate()} ${start.toLocaleDateString(undefined, { month: 'short' })}, ${start.getFullYear()}`;
     }
