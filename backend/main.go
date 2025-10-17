@@ -15,22 +15,21 @@ import (
 )
 
 func main() {
-	if err := config.LoadEnv(); err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
-	}
+	defer func() {
+		if r := recover(); r != nil {
+			log.Fatalf("Fatal error: %v", r)
+		}
+	}()
 
-	if err := db.InitDB(); err != nil {
-		log.Fatalf("Failed to initialize database: %v", err)
-	}
-
-	if err := db.RunMigrations(); err != nil {
-		log.Fatalf("Failed to run migrations: %v", err)
-	}
+	utils.TryErr(config.LoadEnv())
+	utils.TryErr(db.InitDB())
+	utils.TryErr(db.RunMigrations())
 
 	adminEmail := os.Getenv("ADMIN_EMAIL")
 	if adminEmail != "" {
 		if !utils.ExistsBy[models.User]("email", adminEmail) {
-			hashedPassword, _ := utils.HashPassword(os.Getenv("ADMIN_PASSWORD"))
+			hashedPassword := utils.Try(utils.HashPassword(os.Getenv("ADMIN_PASSWORD")))
+			
 			admin := models.User{
 				Email:        adminEmail,
 				PasswordHash: hashedPassword,
@@ -39,7 +38,11 @@ func main() {
 				IsActive:     true,
 				Role:         "admin",
 			}
-			_ = utils.HandleCRUD(nil, "create", &admin, "admin")
+			
+			utils.TryErr(utils.HandleCRUD(nil, "create", &admin, "admin"))
+			log.Printf("Admin user created successfully: %s", adminEmail)
+		} else {
+			log.Printf("Admin user already exists: %s", adminEmail)
 		}
 	}
 
@@ -60,8 +63,5 @@ func main() {
 	routes.SetupRoutes(r)
 
 	port := os.Getenv("PORT")
-
-	if err := r.Run(":" + port); err != nil {
-		log.Fatalf("Failed to start server: %v", err)
-	}
-} 
+	utils.TryErr(r.Run(":" + port))
+}

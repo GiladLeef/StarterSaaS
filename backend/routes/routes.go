@@ -65,6 +65,13 @@ func SetupRoutes(r *gin.Engine) {
 				invitations.POST("/:id/accept", resources.AcceptInvitation)
 				invitations.POST("/:id/decline", resources.DeclineInvitation)
 			}
+
+			admin := protected.Group("/admin")
+			{
+				admin.GET("/resources", resources.GetAdminResources)
+				admin.GET("/resources/:resource", resources.GetAdminResourceData)
+				admin.GET("/stats", resources.GetAdminStats)
+			}
 		}
 	}
 }
