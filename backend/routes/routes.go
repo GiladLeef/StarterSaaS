@@ -68,7 +68,7 @@ func SetupRoutes(r *gin.Engine) {
 
 			invitations := protected.Group("/invitations")
 			{
-				invitations.GET("", invitationController.ListInvitations)
+				invitations.GET("", invitationController.ListUserInvitations)
 				invitations.POST("", invitationController.CreateInvitation)
 				invitations.POST("/:id/accept", invitationController.AcceptInvitation)
 				invitations.POST("/:id/decline", invitationController.DeclineInvitation)

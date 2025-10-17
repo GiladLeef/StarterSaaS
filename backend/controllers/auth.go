@@ -1,9 +1,9 @@
 package controllers
 
 import (
+	"platform/backend/fields"
 	"platform/backend/models"
 	"platform/backend/utils"
-	"platform/backend/fields"
 	"os"
 	"time"
 
@@ -71,10 +71,9 @@ func (ac *AuthController) Login(c *gin.Context) { utils.H(c, func() {
 	}
 
 	token := utils.Try(utils.GenerateToken(user.ID))
-
 	utils.Respond(c, utils.StatusOK, "Login successful", gin.H{
-		"token": token,
 		"user":  utils.ToPublicJSON(user),
+		"token": token,
 	})
 })}
 
@@ -84,37 +83,36 @@ func (ac *AuthController) RefreshToken(c *gin.Context) { utils.H(c, func() {
 	
 	id, ok := userID.(uuid.UUID)
 	utils.Check(ok)
-
+	
 	token := utils.Try(utils.GenerateToken(id))
 	utils.Respond(c, utils.StatusOK, "Token refreshed", gin.H{"token": token})
 })}
 
 func (ac *AuthController) ForgotPassword(c *gin.Context) { utils.H(c, func() {
 	req := utils.Get(utils.BindAndValidate[ForgotPasswordRequest](c))
-	successMsg := "If your email is registered, you will receive a password reset link"
 	
 	user, userErr := utils.ByEmail[models.User](req.Email.Value)
 	utils.Check(userErr == nil)
-
-	token := uuid.New().String()
+	
 	resetToken := models.PasswordResetToken{
-		UserID: user.ID,
-		Token:  token,
+		UserID:    user.ID,
+		Token:     uuid.New().String(),
+		ExpiresAt: time.Now().Add(1 * time.Hour),
 	}
 
 	utils.TryErr(utils.HandleCRUD(c, "create", &resetToken, "reset_token"))
 
 	frontendURL := os.Getenv("FRONTEND_URL")
-	resetURL := frontendURL + "/reset-password"
-	_ = utils.SendPasswordResetEmail(user.Email, token, resetURL)
-
+	resetURL := frontendURL + "/reset-password?token=" + resetToken.Token
+	successMsg := "If an account with that email exists, a password reset link has been sent"
+	_ = utils.SendPasswordResetEmail(user.Email, resetToken.Token, resetURL)
 	utils.Respond(c, utils.StatusOK, successMsg, nil)
 })}
 
 func (ac *AuthController) ResetPassword(c *gin.Context) { utils.H(c, func() {
 	req := utils.Get(utils.BindAndValidate[ResetPasswordRequest](c))
 	resetToken := utils.Try(utils.FindPasswordResetToken(req.Token.Value))
-
+	
 	if time.Now().After(resetToken.ExpiresAt) {
 		utils.Respond(c, utils.StatusBadRequest, "Reset token has expired", nil)
 		utils.Abort()
@@ -124,8 +122,9 @@ func (ac *AuthController) ResetPassword(c *gin.Context) { utils.H(c, func() {
 
 	utils.TryErr(utils.Transaction(c, func(tx *gorm.DB) error {
 		tx.Model(&resetToken.User).Update("password_hash", hashedPassword)
-		return tx.Delete(resetToken).Error
+		tx.Delete(&resetToken)
+		return nil
 	}))
 
-	utils.Respond(c, utils.StatusOK, "Password reset successful", nil)
-})} 
+	utils.Respond(c, utils.StatusOK, "Password has been reset successfully", nil)
+})}

@@ -1,10 +1,9 @@
 package controllers
 
 import (
+	"platform/backend/fields"
 	"platform/backend/models"
 	"platform/backend/utils"
-	"platform/backend/fields"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -12,7 +11,6 @@ import (
 
 type ProjectController struct {
 	BaseController
-	OrganizationController
 }
 
 type CreateProjectRequest struct {
@@ -29,9 +27,10 @@ type UpdateProjectRequest struct {
 
 func (pc *ProjectController) ListProjects(c *gin.Context) { utils.H(c, func() {
 	userID := utils.Get(pc.GetCurrentUserID(c))
-
+	
+	orgIDStr := c.Query("organizationId")
 	var orgID *uuid.UUID
-	if orgIDStr := c.Query("organizationId"); orgIDStr != "" {
+	if orgIDStr != "" {
 		auth := utils.Get(utils.RequireAuthAndOrg(c, pc, orgIDStr))
 		orgID = &auth.OrgID
 	}
@@ -50,41 +49,34 @@ func (pc *ProjectController) CreateProject(c *gin.Context) { utils.H(c, func() {
 		Status:         "active",
 	}
 
-	utils.CreateResource(c, &project, "project", http.StatusCreated)
+	utils.CreateResource(c, &project, "project", int(utils.StatusCreated))
 })}
 
 func (pc *ProjectController) GetProject(c *gin.Context) { utils.H(c, func() {
-	id := utils.Get(utils.ParseUUID(c, "id", "project"))
-	userID := utils.Get(pc.GetCurrentUserID(c))
-	project := utils.Try(utils.ByID[models.Project](id))
-	
-	utils.Check(pc.CheckOwnership(project.OrganizationID, userID))
+	project := utils.FetchByParam[models.Project](c, "id")
 	utils.Respond(c, utils.StatusOK, "", gin.H{"project": project})
 })}
 
 func (pc *ProjectController) UpdateProject(c *gin.Context) { utils.H(c, func() {
-	id := utils.Get(utils.ParseUUID(c, "id", "project"))
 	userID := utils.Get(pc.GetCurrentUserID(c))
+	project := utils.FetchByParam[models.Project](c, "id")
 	req := utils.Get(utils.BindAndValidate[UpdateProjectRequest](c))
-	project := utils.Try(utils.ByID[models.Project](id))
 	
 	utils.Check(pc.CheckOwnership(project.OrganizationID, userID))
 	
 	utils.UpdateStringField(&project.Name, req.Name.Value)
 	utils.UpdateStringField(&project.Description, req.Description.Value)
 	utils.UpdateStringField(&project.Status, req.Status.Value)
-
+	
 	utils.TryErr(utils.HandleCRUD(c, "update", &project, "project"))
-	utils.Respond(c, utils.StatusOK, "Project updated successfully", gin.H{"project": project})
+	utils.CrudSuccess(c, "update", "project", project)
 })}
 
 func (pc *ProjectController) DeleteProject(c *gin.Context) { utils.H(c, func() {
-	id := utils.Get(utils.ParseUUID(c, "id", "project"))
 	userID := utils.Get(pc.GetCurrentUserID(c))
-	project := utils.Try(utils.ByID[models.Project](id))
+	project := utils.FetchByParam[models.Project](c, "id")
 	
 	utils.Check(pc.CheckOwnership(project.OrganizationID, userID))
 	utils.TryErr(utils.HandleCRUD(c, "delete", &project, "project"))
-	utils.Respond(c, utils.StatusOK, "Project deleted successfully", nil)
+	utils.CrudSuccess(c, "delete", "project", nil)
 })}
- 

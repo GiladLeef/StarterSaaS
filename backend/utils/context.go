@@ -59,3 +59,41 @@ func GetQueryUUID(c *gin.Context, key string) (*uuid.UUID, bool) {
 	return &id, true
 }
 
+func CrudSuccess(c *gin.Context, action, resourceName string, data interface{}) {
+	var status HTTPStatus
+	var message string
+	
+	switch action {
+	case "create":
+		status = StatusCreated
+		message = capitalize(resourceName) + " created successfully"
+	case "update":
+		status = StatusOK
+		message = capitalize(resourceName) + " updated successfully"
+	case "delete":
+		status = StatusOK
+		message = capitalize(resourceName) + " deleted successfully"
+		data = nil
+	default:
+		status = StatusOK
+		message = ""
+	}
+	
+	response := gin.H{}
+	if data != nil {
+		response[resourceName] = data
+	}
+	
+	Respond(c, status, message, response)
+}
+
+func capitalize(s string) string {
+	if len(s) == 0 {
+		return ""
+	}
+	if s[0] >= 'a' && s[0] <= 'z' {
+		return string(s[0]-32) + s[1:]
+	}
+	return s
+}
+

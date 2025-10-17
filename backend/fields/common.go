@@ -2,8 +2,6 @@ package fields
 
 import "encoding/json"
 
-// Common field type definitions - simplified with shared unmarshal logic
-
 type Email struct {
 	Value string `json:"email" binding:"required,email"`
 }
@@ -53,3 +51,4 @@ type Status struct {
 	Value string `json:"status"`
 }
 func (f *Status) UnmarshalJSON(data []byte) error { return json.Unmarshal(data, &f.Value) }
+

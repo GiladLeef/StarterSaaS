@@ -1,10 +1,10 @@
 package controllers
 
 import (
+	"platform/backend/fields"
 	"platform/backend/middleware"
 	"platform/backend/models"
 	"platform/backend/utils"
-	"platform/backend/fields"
 
 	"github.com/gin-gonic/gin"
 )
@@ -29,7 +29,7 @@ func (uc *UserController) UpdateCurrentUser(c *gin.Context) { utils.H(c, func() 
 	req := utils.Get(utils.BindAndValidate[UpdateUserRequest](c))
 	userID := utils.Get(middleware.GetUserID(c))
 	user := utils.Try(utils.ByID[models.User](userID))
-
+	
 	utils.UpdateStringField(&user.FirstName, req.FirstName.Value)
 	utils.UpdateStringField(&user.LastName, req.LastName.Value)
 	
@@ -37,14 +37,14 @@ func (uc *UserController) UpdateCurrentUser(c *gin.Context) { utils.H(c, func() 
 		utils.Check(utils.MustNotExistExcept[models.User](c, "Email is already taken", "email", req.Email.Value, userID))
 		user.Email = req.Email.Value
 	}
-
+	
 	utils.TryErr(utils.HandleCRUD(c, "update", &user, "user"))
-	utils.Respond(c, utils.StatusOK, "User updated successfully", gin.H{"user": utils.ToPublicJSON(user)})
+	utils.CrudSuccess(c, "update", "user", utils.ToPublicJSON(user))
 })}
 
 func (uc *UserController) DeleteCurrentUser(c *gin.Context) { utils.H(c, func() {
 	userID := utils.Get(middleware.GetUserID(c))
 	user := utils.Try(utils.ByID[models.User](userID))
 	utils.TryErr(utils.HandleCRUD(c, "delete", &user, "user"))
-	utils.Respond(c, utils.StatusOK, "User deleted successfully", nil)
-})} 
+	utils.CrudSuccess(c, "delete", "user", nil)
+})}
