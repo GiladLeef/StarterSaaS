@@ -15,7 +15,7 @@ var (
 )
 
 func InitDB() error {
-	dsn, err := config.GetDatabaseDSN()
+	dsn, err := config.GetDatabase()
 	if err != nil {
 		return fmt.Errorf("failed to get database DSN: %v", err)
 	}
