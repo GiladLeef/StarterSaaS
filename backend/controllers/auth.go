@@ -1,11 +1,9 @@
 package controllers
 
 import (
-	"platform/backend/db"
 	"platform/backend/models"
 	"platform/backend/utils"
 	"platform/backend/fields"
-	"net/http"
 	"os"
 	"time"
 	"log"
@@ -40,22 +38,12 @@ type ResetPasswordRequest struct {
 	Password fields.Password
 }
 
-func (ac *AuthController) Register(c *gin.Context) {
-	req, ok := utils.BindAndValidate[RegisterRequest](c)
-	if !ok {
-		return
-	}
-
-	if !utils.MustNotExist[models.User](c, "User with this email already exists", "email = ?", req.Email.Value) {
-		return
-	}
-
-	hashedPassword, err := utils.HashPassword(req.Password.Value)
-	if err != nil {
-		utils.RespondWithError(c, utils.StatusError, err, "Password hashing failed")
-		return
-	}
-
+func (ac *AuthController) Register(c *gin.Context) { utils.H(c, func() {
+	req := utils.Get(utils.BindAndValidate[RegisterRequest](c))
+	utils.Check(utils.MustNotExistBy[models.User](c, "User with this email already exists", "email", req.Email.Value))
+	
+	hashedPassword := utils.Try(utils.HashPassword(req.Password.Value))
+	
 	user := models.User{
 		Email:        req.Email.Value,
 		PasswordHash: hashedPassword,
@@ -65,100 +53,59 @@ func (ac *AuthController) Register(c *gin.Context) {
 		Role:         "user",
 	}
 
-	if !utils.HandleCRUD(c, "create", &user, "user") {
-		return
-	}
-
-	token, err := utils.GenerateToken(user.ID)
-	if err != nil {
-		utils.RespondWithError(c, utils.StatusError, err, "Token generation failed")
-		return
-	}
+	utils.Check(utils.HandleCRUD(c, "create", &user, "user"))
+	token := utils.Try(utils.GenerateToken(user.ID))
 
 	utils.Respond(c, utils.StatusCreated, "User registered successfully", gin.H{
 		"user":  utils.ToPublicJSON(user),
 		"token": token,
 	})
-}
+})}
 
-func (ac *AuthController) Login(c *gin.Context) {
-	req, ok := utils.BindAndValidate[LoginRequest](c)
-	if !ok {
-		return
-	}
-
-	user, err := utils.Query[models.User]("email = ?", req.Email.Value)
-	if err != nil {
-		utils.Respond(c, utils.StatusUnauthorized, "Invalid email or password", nil)
-		return
-	}
-
+func (ac *AuthController) Login(c *gin.Context) { utils.H(c, func() {
+	req := utils.Get(utils.BindAndValidate[LoginRequest](c))
+	user := utils.Try(utils.ByEmail[models.User](req.Email.Value))
+	
 	if !utils.CheckPasswordHash(req.Password.Value, user.PasswordHash) {
 		utils.Respond(c, utils.StatusUnauthorized, "Invalid email or password", nil)
-		return
+		utils.Abort()
 	}
 
-	token, err := utils.GenerateToken(user.ID)
-	if err != nil {
-		utils.RespondWithError(c, utils.StatusError, err, "Token generation failed")
-		return
-	}
+	token := utils.Try(utils.GenerateToken(user.ID))
 
 	utils.Respond(c, utils.StatusOK, "Login successful", gin.H{
 		"token": token,
-		"user":  utils.ToPublicJSON(*user),
+		"user":  utils.ToPublicJSON(user),
 	})
-}
+})}
 
-func (ac *AuthController) RefreshToken(c *gin.Context) {
+func (ac *AuthController) RefreshToken(c *gin.Context) { utils.H(c, func() {
 	userID, exists := c.Get("userID")
-	if !exists {
-		utils.UnauthorizedResponse(c, "User ID not found in token")
-		return
-	}
-
+	utils.Check(exists)
+	
 	id, ok := userID.(uuid.UUID)
-	if !ok {
-		utils.ServerErrorResponse(c, nil)
-		return
-	}
+	utils.Check(ok)
 
-	token, err := utils.GenerateToken(id)
+	token := utils.Try(utils.GenerateToken(id))
+	utils.Respond(c, utils.StatusOK, "Token refreshed", gin.H{"token": token})
+})}
+
+func (ac *AuthController) ForgotPassword(c *gin.Context) { utils.H(c, func() {
+	req := utils.Get(utils.BindAndValidate[ForgotPasswordRequest](c))
+	
+	user, err := utils.ByEmail[models.User](req.Email.Value)
 	if err != nil {
-		utils.ServerErrorResponse(c, err)
-		return
-	}
-
-	utils.SuccessResponse(c, http.StatusOK, "Token refreshed", gin.H{
-		"token": token,
-	})
-}
-
-func (ac *AuthController) ForgotPassword(c *gin.Context) {
-	var req ForgotPasswordRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.ValidationErrorResponse(c, err)
-		return
-	}
-
-	var user models.User
-	result := db.DB.Where("email = ?", req.Email.Value).First(&user)
-	if result.RowsAffected == 0 {
-		utils.SuccessResponse(c, http.StatusOK, "If your email is registered, you will receive a password reset link", nil)
+		utils.Respond(c, utils.StatusOK, "If your email is registered, you will receive a password reset link", nil)
 		return
 	}
 
 	token := uuid.New().String()
-
 	resetToken := models.PasswordResetToken{
 		UserID: user.ID,
 		Token:  token,
 	}
 
-	if err := db.DB.Create(&resetToken).Error; err != nil {
-		utils.ServerErrorResponse(c, err)
-		return
-	}
+	utils.Check(utils.HandleCRUD(c, "create", &resetToken, "reset_token"))
 
 	frontendURL := os.Getenv("FRONTEND_URL")
 	if frontendURL == "" {
@@ -166,47 +113,31 @@ func (ac *AuthController) ForgotPassword(c *gin.Context) {
 	}
 
 	resetURL := frontendURL + "/reset-password"
-
-	err := utils.SendPasswordResetEmail(user.Email, token, resetURL)
-	if err != nil {
-		log.Printf("Failed to send password reset email: %v", err)
+	emailErr := utils.SendPasswordResetEmail(user.Email, token, resetURL)
+	if emailErr != nil {
+		log.Printf("Failed to send password reset email: %v", emailErr)
 	}
 
-	utils.SuccessResponse(c, http.StatusOK, "If your email is registered, you will receive a password reset link", nil)
-}
+	utils.Respond(c, utils.StatusOK, "If your email is registered, you will receive a password reset link", nil)
+})}
 
-func (ac *AuthController) ResetPassword(c *gin.Context) {
-	var req ResetPasswordRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.ValidationErrorResponse(c, err)
-		return
-	}
-
-	var resetToken models.PasswordResetToken
-	if err := db.DB.Where("token = ?", req.Token.Value).Preload("User").First(&resetToken).Error; err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid or expired reset token")
-		return
-	}
+func (ac *AuthController) ResetPassword(c *gin.Context) { utils.H(c, func() {
+	req := utils.Get(utils.BindAndValidate[ResetPasswordRequest](c))
+	resetToken := utils.Try(utils.FindPasswordResetToken(req.Token.Value))
 
 	if time.Now().After(resetToken.ExpiresAt) {
-		utils.ErrorResponse(c, http.StatusBadRequest, "Reset token has expired")
-		return
+		utils.Respond(c, utils.StatusBadRequest, "Reset token has expired", nil)
+		utils.Abort()
 	}
 
-	hashedPassword, err := utils.HashPassword(req.Password.Value)
-	if err != nil {
-		utils.ServerErrorResponse(c, err)
-		return
-	}
+	hashedPassword := utils.Try(utils.HashPassword(req.Password.Value))
 
-	if !utils.WithTransaction(c, func(tx *gorm.DB) error {
+	utils.Check(utils.Transaction(c, func(tx *gorm.DB) error {
 		if err := tx.Model(&resetToken.User).Update("password_hash", hashedPassword).Error; err != nil {
 			return err
 		}
-		return tx.Delete(&resetToken).Error
-	}) {
-		return
-	}
+		return tx.Delete(resetToken).Error
+	}))
 
-	utils.SuccessResponse(c, http.StatusOK, "Password reset successful", nil)
-} 
+	utils.Respond(c, utils.StatusOK, "Password reset successful", nil)
+})} 

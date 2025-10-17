@@ -27,35 +27,21 @@ type UpdateProjectRequest struct {
 	Status      fields.Status
 }
 
-func (pc *ProjectController) ListProjects(c *gin.Context) {
-	userID, ok := pc.GetCurrentUserID(c)
-	if !ok {
-		utils.UnauthorizedResponse(c, "")
-		return
-	}
+func (pc *ProjectController) ListProjects(c *gin.Context) { utils.H(c, func() {
+	userID := utils.Get(pc.GetCurrentUserID(c))
 
 	var orgID *uuid.UUID
 	if orgIDStr := c.Query("organizationId"); orgIDStr != "" {
-		auth, ok := utils.RequireAuthAndOrg(c, pc, orgIDStr)
-		if !ok {
-			return
-		}
+		auth := utils.Get(utils.RequireAuthAndOrg(c, pc, orgIDStr))
 		orgID = &auth.OrgID
 	}
 
 	utils.ListResourcesForUser[models.Project](c, userID, "projects", orgID)
-}
+})}
 
-func (pc *ProjectController) CreateProject(c *gin.Context) {
-	req, ok := utils.BindJSON[CreateProjectRequest](c)
-	if !ok {
-		return
-	}
-
-	auth, ok := utils.RequireAuthAndOrg(c, pc, req.OrganizationID.Value)
-	if !ok {
-		return
-	}
+func (pc *ProjectController) CreateProject(c *gin.Context) { utils.H(c, func() {
+	req := utils.Get(utils.BindJSON[CreateProjectRequest](c))
+	auth := utils.Get(utils.RequireAuthAndOrg(c, pc, req.OrganizationID.Value))
 
 	project := models.Project{
 		Name:           req.Name.Value,
@@ -65,7 +51,7 @@ func (pc *ProjectController) CreateProject(c *gin.Context) {
 	}
 
 	utils.CreateResource(c, &project, "project", http.StatusCreated)
-}
+})}
 
 func (pc *ProjectController) GetProject(c *gin.Context) {
 	var project models.Project
