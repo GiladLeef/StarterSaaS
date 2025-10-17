@@ -56,7 +56,10 @@ const extractUserFromResponse = (userData: any): User | null => {
   return null;
 };
 
-const handleAuthSuccess = (router: any, redirectPath = "/dashboard") => {
+const handleAuthSuccess = (router: any, user: any) => {
+  // Redirect admin to /admin, regular users to /dashboard
+  const redirectPath = user?.role === 'admin' ? '/admin' : '/dashboard';
+  
   // Force a page reload to ensure token is properly loaded
   if (typeof window !== 'undefined') {
     window.location.href = redirectPath;
@@ -131,7 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       
       setUser(response.user);
-      handleAuthSuccess(router);
+      handleAuthSuccess(router, response.user);
     } catch (error) {
       throw error;
     } finally {
@@ -155,7 +158,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       
       setUser(response.user);
-      handleAuthSuccess(router);
+      handleAuthSuccess(router, response.user);
     } catch (error) {
       throw error;
     } finally {

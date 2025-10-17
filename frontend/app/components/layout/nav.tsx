@@ -29,6 +29,11 @@ const navItems: NavItem[] = [
   { title: "Projects", href: "/projects", requiresAuth: true },
 ];
 
+const adminNavItems: NavItem[] = [
+  { title: "Home", href: "/", requiresAuth: false },
+  { title: "Admin Dashboard", href: "/admin", requiresAuth: true },
+];
+
 export function MainNav() {
   const pathname = usePathname();
   const { user, isAuthenticated, logout } = useAuth();
@@ -93,6 +98,13 @@ export function MainNav() {
                   <DropdownMenuItem asChild>
                     <Link href="/profile">Profile</Link>
                   </DropdownMenuItem>
+                  {user?.role === 'admin' && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin" className="text-primary font-semibold">
+                        🛡️ Admin Panel
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={logout}>

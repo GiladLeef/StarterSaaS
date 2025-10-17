@@ -70,12 +70,24 @@ export default function DashboardPage() {
       <div className="container flex flex-col gap-6 py-8">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="space-y-1">
-            <h2 className="text-2xl font-bold tracking-tight">Dashboard</h2>
+            <h2 className="text-2xl font-bold tracking-tight">
+              Dashboard
+              {user?.role === 'admin' && (
+                <span className="ml-3 text-sm font-normal px-2 py-1 bg-primary text-primary-foreground rounded-md">
+                  Admin
+                </span>
+              )}
+            </h2>
             <p className="text-muted-foreground">
               Welcome back{user?.firstName ? `, ${user.firstName}` : ''}! Here's an overview of your platform.
             </p>
           </div>
           <div className="flex items-center gap-2">
+            {user?.role === 'admin' && (
+              <Button variant="outline" onClick={() => router.push("/admin")}>
+                🛡️ Admin Panel
+              </Button>
+            )}
             <Button onClick={() => router.push("/projects")}>
               Create Project
             </Button>
