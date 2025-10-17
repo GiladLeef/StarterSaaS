@@ -43,18 +43,20 @@ func SetupRoutes(r *gin.Engine) {
 			{
 				orgs.GET("", orgController.ListOrganizations)
 				orgs.POST("", orgController.CreateOrganization)
-				orgs.GET("/:id", orgController.GetOrganization)
-				orgs.PUT("/:id", orgController.UpdateOrganization)
-				orgs.DELETE("/:id", orgController.DeleteOrganization)
+				
+				orgs.GET("/:id", middleware.RequireOrganizationAccess(), orgController.GetOrganization)
+				orgs.PUT("/:id", middleware.RequireOrganizationAccess(), orgController.UpdateOrganization)
+				orgs.DELETE("/:id", middleware.RequireOrganizationAccess(), orgController.DeleteOrganization)
 			}
 
 			projects := protected.Group("/projects")
 			{
 				projects.GET("", projectController.ListProjects)
 				projects.POST("", projectController.CreateProject)
-				projects.GET("/:id", projectController.GetProject)
-				projects.PUT("/:id", projectController.UpdateProject)
-				projects.DELETE("/:id", projectController.DeleteProject)
+				
+				projects.GET("/:id", middleware.RequireProjectAccess(), projectController.GetProject)
+				projects.PUT("/:id", middleware.RequireProjectAccess(), projectController.UpdateProject)
+				projects.DELETE("/:id", middleware.RequireProjectAccess(), projectController.DeleteProject)
 			}
 
 

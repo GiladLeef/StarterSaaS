@@ -4,9 +4,11 @@
 logs
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
 
 # Dependencies
 node_modules
+.pnpm-store
 
 # Build outputs
 dist

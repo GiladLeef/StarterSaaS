@@ -2,101 +2,77 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { organizationsApi, invitationsApi } from "@/app/api/fetcher";
 import Link from "next/link";
+import { useResourceList } from "@/app/hooks/use-resource-list";
+import { useFormDialog } from "@/app/hooks/use-form-dialog";
+import { CreateDialog } from "@/app/components/create-dialog";
+import { organizationsApi, invitationsApi } from "@/app/api/fetcher";
+import { useState, useEffect } from "react";
+
+interface Organization {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  projectCount?: number;
+  memberCount?: number;
+}
+
+interface Invitation {
+  id: string;
+  organization: Organization;
+  inviter: { email: string };
+}
 
 export default function OrganizationsPage() {
-  const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
-  const [organizations, setOrganizations] = useState<any[]>([]);
-  const [invitations, setInvitations] = useState<any[]>([]);
-  const [error, setError] = useState("");
-  const [isCreating, setIsCreating] = useState(false);
-  const [newOrg, setNewOrg] = useState({
+  const {
+    items: organizations,
+    isLoading,
+    error,
+    setError,
+    refetch,
+  } = useResourceList<Organization>(organizationsApi, "organizations");
+
+  const [invitations, setInvitations] = useState<Invitation[]>([]);
+
+  const dialog = useFormDialog({
     name: "",
     slug: "",
     description: "",
   });
-  const [dialogOpen, setDialogOpen] = useState(false);
 
-  useEffect(() => {
-    const fetchOrganizations = async () => {
-      try {
-        setIsLoading(true);
-        setError("");
-
-        // Fetch organizations
-        const response = await organizationsApi.list();
-        setOrganizations(response.data?.organizations || []);
-        
-        // Fetch invitations
-        const invitationsResponse = await invitationsApi.list();
-        setInvitations(invitationsResponse.data?.invitations || []);
-      } catch (err) {
-        console.error('Error fetching organizations:', err);
-        setError("Failed to load organizations");
-        if (err instanceof Error && err.message.includes("unauthorized")) {
-          router.push("/login");
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchOrganizations();
-  }, [router]);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setNewOrg(prev => ({
-      ...prev,
-      [name]: value,
-      // Always auto-generate slug from name
-      ...(name === "name" ? { slug: value.toLowerCase().replace(/\s+/g, "-") } : {})
-    }));
+  // Auto-generate slug from name
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    dialog.handleChange(e);
+    if (e.target.name === "name") {
+      dialog.updateField("slug", e.target.value.toLowerCase().replace(/\s+/g, "-"));
+    }
   };
 
-  const handleCreateOrg = async () => {
-    try {
-      setIsCreating(true);
-      setError("");
+  useEffect(() => {
+    const fetchInvitations = async () => {
+      try {
+        const response = await invitationsApi.list();
+        setInvitations(response.data?.invitations || []);
+      } catch (err) {
+        console.error("Failed to load invitations:", err);
+      }
+    };
+    fetchInvitations();
+  }, []);
 
-      await organizationsApi.create(newOrg);
-      
-      // Close dialog and reset form
-      setDialogOpen(false);
-      setNewOrg({
-        name: "",
-        slug: "",
-        description: "",
-      });
-      
-      // Navigate to the dashboard to refresh the data
-      // This prevents client-side errors from happening
-      router.refresh();
-    } catch (err) {
-      console.error('Error creating organization:', err);
-      setError(err instanceof Error ? err.message : "Failed to create organization");
-    } finally {
-      setIsCreating(false);
-    }
+  const handleCreate = async () => {
+    await dialog.handleSubmit(async (data) => {
+      await organizationsApi.create(data);
+      await refetch();
+    });
   };
 
   const handleAcceptInvitation = async (invitationId: string) => {
     try {
       await invitationsApi.accept(invitationId);
-      
-      // Remove the invitation from the list
-      setInvitations(prev => prev.filter(inv => inv.id !== invitationId));
-      
-      // Refresh organizations to show the newly joined one
-      const response = await organizationsApi.list();
-      setOrganizations(response.data?.organizations || []);
+      setInvitations((prev) => prev.filter((inv) => inv.id !== invitationId));
+      await refetch();
     } catch (err) {
       setError("Failed to accept invitation");
     }
@@ -105,15 +81,12 @@ export default function OrganizationsPage() {
   const handleDeclineInvitation = async (invitationId: string) => {
     try {
       await invitationsApi.decline(invitationId);
-      
-      // Remove the invitation from the list
-      setInvitations(prev => prev.filter(inv => inv.id !== invitationId));
+      setInvitations((prev) => prev.filter((inv) => inv.id !== invitationId));
     } catch (err) {
       setError("Failed to decline invitation");
     }
   };
 
-  // Early loading state
   if (isLoading) {
     return (
       <div className="flex min-h-screen w-full flex-col items-center justify-center">
@@ -130,60 +103,40 @@ export default function OrganizationsPage() {
             {error}
           </div>
         )}
-        
+
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="space-y-1">
             <h2 className="text-2xl font-bold tracking-tight">Organizations</h2>
             <p className="text-muted-foreground">Manage your organizations and team access.</p>
           </div>
-          <div className="flex items-center gap-2">
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-              <DialogTrigger asChild>
-                <Button>Create Organization</Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Create Organization</DialogTitle>
-                  <DialogDescription>
-                    Add a new organization to collaborate with your team.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Organization Name</Label>
-                    <Input 
-                      id="name" 
-                      name="name"
-                      value={newOrg.name}
-                      onChange={handleInputChange}
-                      placeholder="Acme Inc." 
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="description">Description (Optional)</Label>
-                    <Input 
-                      id="description" 
-                      name="description"
-                      value={newOrg.description}
-                      onChange={handleInputChange}
-                      placeholder="A brief description of your organization" 
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button 
-                    type="submit" 
-                    onClick={handleCreateOrg}
-                    disabled={isCreating || !newOrg.name}
-                  >
-                    {isCreating ? "Creating..." : "Create Organization"}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
+
+          <CreateDialog
+            title="Create Organization"
+            description="Add a new organization to collaborate with your team."
+            triggerText="Create Organization"
+            fields={[
+              {
+                name: "name",
+                label: "Organization Name",
+                placeholder: "Acme Inc.",
+                required: true,
+              },
+              {
+                name: "description",
+                label: "Description",
+                placeholder: "A brief description of your organization",
+              },
+            ]}
+            isOpen={dialog.isOpen}
+            onOpenChange={dialog.setIsOpen}
+            formData={dialog.formData}
+            onChange={handleNameChange}
+            onSubmit={handleCreate}
+            isSubmitting={dialog.isSubmitting}
+            error={dialog.error}
+          />
         </div>
-        
+
         {organizations.length > 0 ? (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {organizations.map((org) => (
@@ -191,8 +144,8 @@ export default function OrganizationsPage() {
                 <CardHeader>
                   <CardTitle>{org.name}</CardTitle>
                   <CardDescription>
-                    {org.projectCount || 0} {(org.projectCount || 0) === 1 ? 'project' : 'projects'} • 
-                    {org.memberCount || 0} {(org.memberCount || 0) === 1 ? 'member' : 'members'}
+                    {org.projectCount || 0} {(org.projectCount || 0) === 1 ? "project" : "projects"} •
+                    {org.memberCount || 0} {(org.memberCount || 0) === 1 ? "member" : "members"}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -218,13 +171,13 @@ export default function OrganizationsPage() {
               <CardDescription>Create your first organization to get started.</CardDescription>
             </CardHeader>
             <CardContent className="flex justify-center">
-              <Button onClick={() => setDialogOpen(true)}>
+              <Button onClick={() => dialog.setIsOpen(true)}>
                 Create Your First Organization
               </Button>
             </CardContent>
           </Card>
         )}
-        
+
         {invitations.length > 0 && (
           <Card>
             <CardHeader>
@@ -242,17 +195,14 @@ export default function OrganizationsPage() {
                       </p>
                     </div>
                     <div className="flex gap-2">
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
                         onClick={() => handleDeclineInvitation(invitation.id)}
                       >
                         Decline
                       </Button>
-                      <Button 
-                        size="sm"
-                        onClick={() => handleAcceptInvitation(invitation.id)}
-                      >
+                      <Button size="sm" onClick={() => handleAcceptInvitation(invitation.id)}>
                         Accept
                       </Button>
                     </div>
@@ -265,4 +215,5 @@ export default function OrganizationsPage() {
       </div>
     </div>
   );
-} 
+}
+

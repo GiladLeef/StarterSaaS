@@ -15,7 +15,7 @@ func LoadEnv() error {
 	return nil
 }
 
-func GetDatabase() (string, error) {
+func GetDatabaseDSN() (string, error) {
 	dsn := os.Getenv("DATABASE_URL")
 	if dsn != "" {
 		return dsn, nil
@@ -53,4 +53,12 @@ func GetDatabase() (string, error) {
 
 	return fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
 		host, port, user, password, dbname, sslmode), nil
+}
+
+func GetMigrationsPath() string {
+	migrationsPath := os.Getenv("MIGRATIONS_PATH")
+	if migrationsPath == "" {
+		return filepath.Join(".", "db", "migrations")
+	}
+	return migrationsPath
 }

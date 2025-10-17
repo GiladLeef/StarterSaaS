@@ -106,108 +106,34 @@ func (pc *ProjectController) CreateProject(c *gin.Context) {
 }
 
 func (pc *ProjectController) GetProject(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid project ID")
-		return
-	}
-
-	userID, ok := pc.GetCurrentUserID(c)
-	if !ok {
-		utils.UnauthorizedResponse(c, "")
-		return
-	}
-
+	// Project access already checked by middleware
 	var project models.Project
-	if err := pc.FindByID(&project, id); err != nil {
-		utils.NotFoundResponse(c, "Project not found")
-		return
-	}
-
-	if !pc.CheckOwnership(project.OrganizationID, userID) {
-		utils.UnauthorizedResponse(c, "You don't have access to this project")
-		return
-	}
-
-	utils.SuccessResponse(c, http.StatusOK, "", gin.H{"project": project})
+	utils.GetByID(c, &pc.BaseController, &project, "project")
 }
 
 func (pc *ProjectController) UpdateProject(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid project ID")
-		return
-	}
-
-	var req UpdateProjectRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.ValidationErrorResponse(c, err)
-		return
-	}
-
-	userID, ok := pc.GetCurrentUserID(c)
-	if !ok {
-		utils.UnauthorizedResponse(c, "")
-		return
-	}
-
+	// Project access already checked by middleware
 	var project models.Project
-	if err := pc.FindByID(&project, id); err != nil {
-		utils.NotFoundResponse(c, "Project not found")
-		return
-	}
-
-	if !pc.CheckOwnership(project.OrganizationID, userID) {
-		utils.UnauthorizedResponse(c, "You don't have access to this project")
-		return
-	}
-
-	if req.Name.Value != "" {
-		project.Name = req.Name.Value
-	}
-	if req.Description.Value != "" {
-		project.Description = req.Description.Value
-	}
-	if req.Status.Value != "" {
-		project.Status = req.Status.Value
-	}
-
-	if err := pc.Update(&project); err != nil {
-		utils.ServerErrorResponse(c, err)
-		return
-	}
-
-	utils.SuccessResponse(c, http.StatusOK, "Project updated successfully", gin.H{"project": project})
+	var req UpdateProjectRequest
+	
+	utils.UpdateByID(c, &pc.BaseController, &project, &req, "project", func(model, request interface{}) {
+		project := model.(*models.Project)
+		req := request.(*UpdateProjectRequest)
+		
+		if req.Name.Value != "" {
+			project.Name = req.Name.Value
+		}
+		if req.Description.Value != "" {
+			project.Description = req.Description.Value
+		}
+		if req.Status.Value != "" {
+			project.Status = req.Status.Value
+		}
+	})
 }
 
 func (pc *ProjectController) DeleteProject(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid project ID")
-		return
-	}
-
-	userID, ok := pc.GetCurrentUserID(c)
-	if !ok {
-		utils.UnauthorizedResponse(c, "")
-		return
-	}
-
+	// Project access already checked by middleware
 	var project models.Project
-	if err := pc.FindByID(&project, id); err != nil {
-		utils.NotFoundResponse(c, "Project not found")
-		return
-	}
-
-	if !pc.CheckOwnership(project.OrganizationID, userID) {
-		utils.UnauthorizedResponse(c, "You don't have access to this project")
-		return
-	}
-
-	if err := pc.Delete(&project); err != nil {
-		utils.ServerErrorResponse(c, err)
-		return
-	}
-
-	utils.SuccessResponse(c, http.StatusOK, "Project deleted successfully", nil)
+	utils.DeleteByID(c, &pc.BaseController, &project, "project")
 } 

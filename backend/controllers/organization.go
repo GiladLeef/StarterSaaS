@@ -108,89 +108,33 @@ func (oc *OrganizationController) CreateOrganization(c *gin.Context) {
 }
 
 func (oc *OrganizationController) GetOrganization(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid organization ID")
-		return
-	}
-
-	_, ok := oc.CheckOrganizationAccess(c, id)
-	if !ok {
-		return
-	}
-
+	// Organization access already checked by middleware
 	var org models.Organization
-	if err := oc.FindByID(&org, id); err != nil {
-		utils.NotFoundResponse(c, "Organization not found")
-		return
-	}
-
-	utils.SuccessResponse(c, http.StatusOK, "", gin.H{"organization": org})
+	utils.GetByID(c, &oc.BaseController, &org, "organization")
 }
 
 func (oc *OrganizationController) UpdateOrganization(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid organization ID")
-		return
-	}
-
-	var req UpdateOrganizationRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.ValidationErrorResponse(c, err)
-		return
-	}
-
-	_, ok := oc.CheckOrganizationAccess(c, id)
-	if !ok {
-		return
-	}
-
+	// Organization access already checked by middleware
 	var org models.Organization
-	if err := oc.FindByID(&org, id); err != nil {
-		utils.NotFoundResponse(c, "Organization not found")
-		return
-	}
-
-	if req.Name.Value != "" {
-		org.Name = req.Name.Value
-	}
-	if req.Description.Value != "" {
-		org.Description = req.Description.Value
-	}
-
-	if err := oc.Update(&org); err != nil {
-		utils.ServerErrorResponse(c, err)
-		return
-	}
-
-	utils.SuccessResponse(c, http.StatusOK, "Organization updated successfully", gin.H{"organization": org})
+	var req UpdateOrganizationRequest
+	
+	utils.UpdateByID(c, &oc.BaseController, &org, &req, "organization", func(model, request interface{}) {
+		org := model.(*models.Organization)
+		req := request.(*UpdateOrganizationRequest)
+		
+		if req.Name.Value != "" {
+			org.Name = req.Name.Value
+		}
+		if req.Description.Value != "" {
+			org.Description = req.Description.Value
+		}
+	})
 }
 
 func (oc *OrganizationController) DeleteOrganization(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid organization ID")
-		return
-	}
-
-	_, ok := oc.CheckOrganizationAccess(c, id)
-	if !ok {
-		return
-	}
-
+	// Organization access already checked by middleware
 	var org models.Organization
-	if err := oc.FindByID(&org, id); err != nil {
-		utils.NotFoundResponse(c, "Organization not found")
-		return
-	}
-
-	if err := oc.Delete(&org); err != nil {
-		utils.ServerErrorResponse(c, err)
-		return
-	}
-
-	utils.SuccessResponse(c, http.StatusOK, "Organization deleted successfully", nil)
+	utils.DeleteByID(c, &oc.BaseController, &org, "organization")
 }
 
 func (oc *OrganizationController) FindUserOrganizations(organizations *[]models.Organization, userID uuid.UUID) error {
