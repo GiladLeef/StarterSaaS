@@ -51,9 +51,6 @@ tmp
 .dockerignore
 docker-compose.override.yml
 
-# Environment variables
-.env
-
 # Misc
 .cache
 .temp
