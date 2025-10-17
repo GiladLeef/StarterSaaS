@@ -60,9 +60,7 @@ func (ic *InvitationController) AcceptInvitation(c *gin.Context) { utils.H(c, fu
 
 	utils.Check(utils.Transaction(c, func(tx *gorm.DB) error {
 		invitation.Status = "accepted"
-		if err := tx.Save(invitation).Error; err != nil {
-			return err
-		}
+		tx.Save(invitation)
 		return utils.AddOrganizationMember(user.ID, invitation.OrganizationID)
 	}))
 

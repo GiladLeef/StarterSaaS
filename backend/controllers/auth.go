@@ -6,7 +6,6 @@ import (
 	"platform/backend/fields"
 	"os"
 	"time"
-	"log"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -92,12 +91,10 @@ func (ac *AuthController) RefreshToken(c *gin.Context) { utils.H(c, func() {
 
 func (ac *AuthController) ForgotPassword(c *gin.Context) { utils.H(c, func() {
 	req := utils.Get(utils.BindAndValidate[ForgotPasswordRequest](c))
+	successMsg := "If your email is registered, you will receive a password reset link"
 	
-	user, err := utils.ByEmail[models.User](req.Email.Value)
-	if err != nil {
-		utils.Respond(c, utils.StatusOK, "If your email is registered, you will receive a password reset link", nil)
-		return
-	}
+	user, userErr := utils.ByEmail[models.User](req.Email.Value)
+	utils.Check(userErr == nil)
 
 	token := uuid.New().String()
 	resetToken := models.PasswordResetToken{
@@ -108,17 +105,10 @@ func (ac *AuthController) ForgotPassword(c *gin.Context) { utils.H(c, func() {
 	utils.Check(utils.HandleCRUD(c, "create", &resetToken, "reset_token"))
 
 	frontendURL := os.Getenv("FRONTEND_URL")
-	if frontendURL == "" {
-		frontendURL = "http://localhost:3000"
-	}
-
 	resetURL := frontendURL + "/reset-password"
-	emailErr := utils.SendPasswordResetEmail(user.Email, token, resetURL)
-	if emailErr != nil {
-		log.Printf("Failed to send password reset email: %v", emailErr)
-	}
+	_ = utils.SendPasswordResetEmail(user.Email, token, resetURL)
 
-	utils.Respond(c, utils.StatusOK, "If your email is registered, you will receive a password reset link", nil)
+	utils.Respond(c, utils.StatusOK, successMsg, nil)
 })}
 
 func (ac *AuthController) ResetPassword(c *gin.Context) { utils.H(c, func() {
@@ -133,9 +123,7 @@ func (ac *AuthController) ResetPassword(c *gin.Context) { utils.H(c, func() {
 	hashedPassword := utils.Try(utils.HashPassword(req.Password.Value))
 
 	utils.Check(utils.Transaction(c, func(tx *gorm.DB) error {
-		if err := tx.Model(&resetToken.User).Update("password_hash", hashedPassword).Error; err != nil {
-			return err
-		}
+		tx.Model(&resetToken.User).Update("password_hash", hashedPassword)
 		return tx.Delete(resetToken).Error
 	}))
 

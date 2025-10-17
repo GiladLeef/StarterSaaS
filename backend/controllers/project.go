@@ -53,32 +53,38 @@ func (pc *ProjectController) CreateProject(c *gin.Context) { utils.H(c, func() {
 	utils.CreateResource(c, &project, "project", http.StatusCreated)
 })}
 
-func (pc *ProjectController) GetProject(c *gin.Context) {
-	var project models.Project
-	utils.GetByID(c, &pc.BaseController, &project, "project")
-}
-
-func (pc *ProjectController) UpdateProject(c *gin.Context) {
-	var project models.Project
-	var req UpdateProjectRequest
+func (pc *ProjectController) GetProject(c *gin.Context) { utils.H(c, func() {
+	id := utils.Get(utils.ParseUUID(c, "id", "project"))
+	userID := utils.Get(pc.GetCurrentUserID(c))
+	project := utils.Try(utils.ByID[models.Project](id))
 	
-	utils.UpdateByID(c, &pc.BaseController, &project, &req, "project", func(model, request interface{}) {
-		project := model.(*models.Project)
-		req := request.(*UpdateProjectRequest)
-		
-		if req.Name.Value != "" {
-			project.Name = req.Name.Value
-		}
-		if req.Description.Value != "" {
-			project.Description = req.Description.Value
-		}
-		if req.Status.Value != "" {
-			project.Status = req.Status.Value
-		}
-	})
-}
+	utils.Check(pc.CheckOwnership(project.OrganizationID, userID))
+	utils.Respond(c, utils.StatusOK, "", gin.H{"project": project})
+})}
 
-func (pc *ProjectController) DeleteProject(c *gin.Context) {
-	var project models.Project
-	utils.DeleteByID(c, &pc.BaseController, &project, "project")
-} 
+func (pc *ProjectController) UpdateProject(c *gin.Context) { utils.H(c, func() {
+	id := utils.Get(utils.ParseUUID(c, "id", "project"))
+	userID := utils.Get(pc.GetCurrentUserID(c))
+	req := utils.Get(utils.BindAndValidate[UpdateProjectRequest](c))
+	project := utils.Try(utils.ByID[models.Project](id))
+	
+	utils.Check(pc.CheckOwnership(project.OrganizationID, userID))
+	
+	utils.UpdateStringField(&project.Name, req.Name.Value)
+	utils.UpdateStringField(&project.Description, req.Description.Value)
+	utils.UpdateStringField(&project.Status, req.Status.Value)
+
+	utils.Check(utils.HandleCRUD(c, "update", &project, "project"))
+	utils.Respond(c, utils.StatusOK, "Project updated successfully", gin.H{"project": project})
+})}
+
+func (pc *ProjectController) DeleteProject(c *gin.Context) { utils.H(c, func() {
+	id := utils.Get(utils.ParseUUID(c, "id", "project"))
+	userID := utils.Get(pc.GetCurrentUserID(c))
+	project := utils.Try(utils.ByID[models.Project](id))
+	
+	utils.Check(pc.CheckOwnership(project.OrganizationID, userID))
+	utils.Check(utils.HandleCRUD(c, "delete", &project, "project"))
+	utils.Respond(c, utils.StatusOK, "Project deleted successfully", nil)
+})}
+ 

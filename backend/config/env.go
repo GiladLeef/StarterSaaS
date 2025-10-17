@@ -3,7 +3,6 @@ package config
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/joho/godotenv"
 )
@@ -56,9 +55,5 @@ func GetDatabaseDSN() (string, error) {
 }
 
 func GetMigrationsPath() string {
-	migrationsPath := os.Getenv("MIGRATIONS_PATH")
-	if migrationsPath == "" {
-		return filepath.Join(".", "db", "migrations")
-	}
-	return migrationsPath
+	return os.Getenv("MIGRATIONS_PATH")
 }

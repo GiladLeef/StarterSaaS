@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"time"
 
 	mail "github.com/xhit/go-simple-mail/v2"
@@ -18,24 +19,15 @@ type EmailConfig struct {
 }
 
 func GetEmailConfig() EmailConfig {
+	port, _ := strconv.Atoi(os.Getenv("SMTP_PORT"))
 	return EmailConfig{
 		SMTPServer:   os.Getenv("SMTP_SERVER"),
-		SMTPPort:     GetIntEnv("SMTP_PORT", 587),
+		SMTPPort:     port,
 		SMTPUsername: os.Getenv("SMTP_USERNAME"),
 		SMTPPassword: os.Getenv("SMTP_PASSWORD"),
 		FromEmail:    os.Getenv("FROM_EMAIL"),
 		FromName:     os.Getenv("FROM_NAME"),
 	}
-}
-
-func GetIntEnv(key string, defaultVal int) int {
-	val := os.Getenv(key)
-	if val == "" {
-		return defaultVal
-	}
-	var result int
-	fmt.Sscanf(val, "%d", &result)
-	return result
 }
 
 func SendPasswordResetEmail(email, resetToken, resetURL string) error {

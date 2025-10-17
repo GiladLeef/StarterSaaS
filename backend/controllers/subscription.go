@@ -12,9 +12,9 @@ type SubscriptionController struct {
 	OrganizationController
 }
 
-func (sc *SubscriptionController) ListSubscriptions(c *gin.Context) {
+func (sc *SubscriptionController) ListSubscriptions(c *gin.Context) { utils.H(c, func() {
 	utils.ListWithOrgFilter[models.Subscription](c, sc, "subscription", "subscriptions")
-}
+})}
 
 func (sc *SubscriptionController) GetSubscription(c *gin.Context) { utils.H(c, func() {
 	id := utils.Get(utils.ParseUUID(c, "id", "subscription"))

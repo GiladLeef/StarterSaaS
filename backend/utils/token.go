@@ -65,23 +65,11 @@ func ValidateToken(tokenString string) (uuid.UUID, error) {
 }
 
 func getJWTSecret() string {
-	secret := os.Getenv("JWT_SECRET")
-	if secret == "" {
-		return "default-jwt-secret-key-change-in-production"
-	}
-	return secret
+	return os.Getenv("JWT_SECRET")
 }
 
 func getJWTExpiry() time.Duration {
 	expiryStr := os.Getenv("JWT_EXPIRY")
-	if expiryStr == "" {
-		return 24 * time.Hour 
-	}
-
-	expiry, err := time.ParseDuration(expiryStr)
-	if err != nil {
-		return 24 * time.Hour 
-	}
-
+	expiry, _ := time.ParseDuration(expiryStr)
 	return expiry
 } 

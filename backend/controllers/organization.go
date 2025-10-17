@@ -60,47 +60,43 @@ func (oc *OrganizationController) CreateOrganization(c *gin.Context) { utils.H(c
 	}
 
 	utils.Check(utils.Transaction(c, func(tx *gorm.DB) error {
-		if err := tx.Create(&org).Error; err != nil {
-			return err
-		}
+		tx.Create(&org)
 		return utils.AddOrganizationMember(userID, org.ID)
 	}))
 
 	utils.Respond(c, utils.StatusCreated, "Organization created successfully", gin.H{"organization": org})
 })}
 
-func (oc *OrganizationController) GetOrganization(c *gin.Context) {
-	var org models.Organization
-	utils.GetByID(c, &oc.BaseController, &org, "organization")
-}
+func (oc *OrganizationController) GetOrganization(c *gin.Context) { utils.H(c, func() {
+	id := utils.Get(utils.ParseUUID(c, "id", "organization"))
+	utils.Get(oc.CheckOrganizationAccess(c, id))
+	org := utils.Try(utils.ByID[models.Organization](id))
+	utils.Respond(c, utils.StatusOK, "", gin.H{"organization": org})
+})}
 
-func (oc *OrganizationController) UpdateOrganization(c *gin.Context) {
-	var org models.Organization
-	var req UpdateOrganizationRequest
-	
-	utils.UpdateByID(c, &oc.BaseController, &org, &req, "organization", func(model, request interface{}) {
-		org := model.(*models.Organization)
-		req := request.(*UpdateOrganizationRequest)
-		
-		if req.Name.Value != "" {
-			org.Name = req.Name.Value
-		}
-		if req.Description.Value != "" {
-			org.Description = req.Description.Value
-		}
-	})
-}
+func (oc *OrganizationController) UpdateOrganization(c *gin.Context) { utils.H(c, func() {
+	id := utils.Get(utils.ParseUUID(c, "id", "organization"))
+	utils.Get(oc.CheckOrganizationAccess(c, id))
+	req := utils.Get(utils.BindAndValidate[UpdateOrganizationRequest](c))
+	org := utils.Try(utils.ByID[models.Organization](id))
 
-func (oc *OrganizationController) DeleteOrganization(c *gin.Context) {
-	var org models.Organization
-	utils.DeleteByID(c, &oc.BaseController, &org, "organization")
-}
+	utils.UpdateStringField(&org.Name, req.Name.Value)
+	utils.UpdateStringField(&org.Description, req.Description.Value)
+
+	utils.Check(utils.HandleCRUD(c, "update", &org, "organization"))
+	utils.Respond(c, utils.StatusOK, "Organization updated successfully", gin.H{"organization": org})
+})}
+
+func (oc *OrganizationController) DeleteOrganization(c *gin.Context) { utils.H(c, func() {
+	id := utils.Get(utils.ParseUUID(c, "id", "organization"))
+	utils.Get(oc.CheckOrganizationAccess(c, id))
+	org := utils.Try(utils.ByID[models.Organization](id))
+	utils.Check(utils.HandleCRUD(c, "delete", &org, "organization"))
+	utils.Respond(c, utils.StatusOK, "Organization deleted successfully", nil)
+})}
+
 
 func (oc *OrganizationController) FindUserOrganizations(organizations *[]models.Organization, userID uuid.UUID) error {
-	orgs, err := utils.GetUserOrganizations(userID)
-	if err != nil {
-		return err
-	}
-	*organizations = orgs
+	*organizations = utils.Try(utils.GetUserOrganizations(userID))
 	return nil
 } 

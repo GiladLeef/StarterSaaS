@@ -18,25 +18,16 @@ func (b *BaseController) GetCurrentUserID(c *gin.Context) (uuid.UUID, bool) {
 
 func (b *BaseController) RequireAuthentication(c *gin.Context) (uuid.UUID, bool) {
 	userID, ok := b.GetCurrentUserID(c)
-	if !ok {
-		utils.UnauthorizedResponse(c, "")
-		return uuid.Nil, false
-	}
-	return userID, true
+	utils.Check(ok)
+	utils.Check(userID != uuid.Nil)
+	return userID, ok
 }
 
 func (b *BaseController) CheckOrganizationAccess(c *gin.Context, orgID uuid.UUID) (uuid.UUID, bool) {
 	userID, ok := b.RequireAuthentication(c)
-	if !ok {
-		return uuid.Nil, false
-	}
-	
-	if !b.CheckOwnership(orgID, userID) {
-		utils.UnauthorizedResponse(c, "You don't have access to this organization")
-		return uuid.Nil, false
-	}
-	
-	return userID, true
+	utils.Check(ok)
+	utils.Check(b.CheckOwnership(orgID, userID))
+	return userID, ok
 }
 
 func (b *BaseController) FindByID(model interface{}, id uuid.UUID) error {

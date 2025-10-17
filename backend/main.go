@@ -31,7 +31,7 @@ func main() {
 	adminPassword := os.Getenv("ADMIN_PASSWORD")
 	adminFirstName := os.Getenv("ADMIN_FIRST_NAME")
 	adminLastName := os.Getenv("ADMIN_LAST_NAME")
-	if adminEmail != "" && adminPassword != "" {
+	if adminEmail != "" {
 		var count int64
 		db.DB.Model(&models.User{}).Where("email = ?", adminEmail).Count(&count)
 		if count == 0 {
@@ -68,9 +68,6 @@ func main() {
 	routes.SetupRoutes(r)
 
 	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
 
 	if err := r.Run(":" + port); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
