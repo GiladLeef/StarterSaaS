@@ -1,46 +1,49 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
 import { organizationsApi, projectsApi } from "@/app/api/fetcher";
 import { useAuth } from "@/app/providers/auth";
 import { formatRelativeTime } from "@/app/utils/dates";
+import { useAutoFetch } from "@/app/hooks/auto";
 import Link from "next/link";
+
+interface Organization {
+  id: string;
+  name: string;
+  memberCount?: number;
+  createdAt: string;
+}
+
+interface Project {
+  id: string;
+  name: string;
+  status: string;
+  updatedAt: string;
+}
 
 export default function DashboardPage() {
   const router = useRouter();
   const { user } = useAuth();
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [organizations, setOrganizations] = useState<any[]>([]);
-  const [projects, setProjects] = useState<any[]>([]);
+  
+  const { 
+    data: organizations, 
+    isLoading: orgsLoading, 
+    error: orgsError 
+  } = useAutoFetch<Organization>(organizationsApi.list, "organizations");
+  
+  const { 
+    data: projects, 
+    isLoading: projectsLoading, 
+    error: projectsError 
+  } = useAutoFetch<Project>(projectsApi.list, "projects");
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setIsLoading(true);
-        setError("");
-
-        const orgsResponse = await organizationsApi.list();
-        setOrganizations(orgsResponse.data?.organizations || []);
-
-        const projectsResponse = await projectsApi.list();
-        setProjects(projectsResponse.data?.projects || []);
-      } catch (err) {
-        setError("Failed to load dashboard data");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
-
-  const activeProjectsCount = projects.filter(p => 
+  const isLoading = orgsLoading || projectsLoading;
+  const error = orgsError || projectsError;
+  const activeProjectsCount = projects.filter((p: Project) => 
     p.status?.toLowerCase() === 'active').length;
 
   if (isLoading) {
@@ -99,13 +102,14 @@ export default function DashboardPage() {
             <CardContent>
               <div className="text-2xl font-bold">{organizations.length}</div>
               <p className="text-xs text-muted-foreground">
-                {organizations.length === 0 ? 'No organizations yet' : `${organizations.length} ${organizations.length === 1 ? 'organization' : 'organizations'}`}
+                Active organizations
               </p>
             </CardContent>
           </Card>
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Projects</CardTitle>
+              <CardTitle className="text-sm font-medium">Projects</CardTitle>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
@@ -121,15 +125,16 @@ export default function DashboardPage() {
               </svg>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{activeProjectsCount}</div>
+              <div className="text-2xl font-bold">{projects.length}</div>
               <p className="text-xs text-muted-foreground">
-                {projects.length === 0 ? 'No projects yet' : `${projects.length} total projects`}
+                Total projects
               </p>
             </CardContent>
           </Card>
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Subscription Status</CardTitle>
+              <CardTitle className="text-sm font-medium">Active Projects</CardTitle>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
@@ -144,117 +149,96 @@ export default function DashboardPage() {
               </svg>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{user?.subscription?.status || "Free"}</div>
-              <p className="text-xs text-muted-foreground">{user?.subscription?.plan || "Free Plan"}</p>
+              <div className="text-2xl font-bold">{activeProjectsCount}</div>
+              <p className="text-xs text-muted-foreground">
+                Currently active
+              </p>
             </CardContent>
           </Card>
         </div>
-        
-        {projects.length > 0 ? (
+
+        <div className="grid gap-6 md:grid-cols-2">
           <Card>
             <CardHeader>
-              <CardTitle>Recent Projects</CardTitle>
-              <CardDescription>
-                You have {activeProjectsCount} active {activeProjectsCount === 1 ? 'project' : 'projects'}.
-              </CardDescription>
+              <CardTitle>Recent Organizations</CardTitle>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Project</TableHead>
-                    <TableHead>Organization</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Last Updated</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {projects.slice(0, 4).map((project) => (
-                    <TableRow key={project.id}>
-                      <TableCell className="font-medium">{project.name}</TableCell>
-                      <TableCell>{project.organization?.name || "—"}</TableCell>
-                      <TableCell>
-                        <StatusBadge status={project.status || "inactive"} />
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {formatRelativeTime(project.updatedAt || project.createdAt)}
-                      </TableCell>
+              {organizations.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No organizations yet</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Members</TableHead>
+                      <TableHead>Created</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-              {projects.length > 4 && (
-                <div className="mt-4 flex justify-end">
-                  <Button variant="outline" size="sm" asChild>
-                    <Link href="/projects">View All Projects</Link>
-                  </Button>
-                </div>
+                  </TableHeader>
+                  <TableBody>
+                    {organizations.slice(0, 5).map((org: Organization) => (
+                      <TableRow key={org.id}>
+                        <TableCell>
+                          <Link
+                            href={`/organizations/${org.id}`}
+                            className="font-medium hover:underline"
+                          >
+                            {org.name}
+                          </Link>
+                        </TableCell>
+                        <TableCell>{org.memberCount || 1}</TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {formatRelativeTime(org.createdAt)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               )}
             </CardContent>
           </Card>
-        ) : (
+
           <Card>
             <CardHeader>
-              <CardTitle>No Projects Yet</CardTitle>
-              <CardDescription>
-                Create your first project to get started.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex justify-center">
-              <Button onClick={() => router.push("/projects")}>
-                Create Your First Project
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-        
-        {organizations.length > 0 ? (
-          <Card>
-            <CardHeader>
-              <CardTitle>Your Organizations</CardTitle>
-              <CardDescription>
-                You belong to {organizations.length} {organizations.length === 1 ? 'organization' : 'organizations'}.
-              </CardDescription>
+              <CardTitle>Recent Projects</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {organizations.map((org) => (
-                  <Card key={org.id}>
-                    <CardHeader className="p-4">
-                      <CardTitle className="text-lg">{org.name}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-4 pt-0">
-                      <p className="text-sm text-muted-foreground">
-                        {org.projectCount || 0} {(org.projectCount || 0) === 1 ? 'project' : 'projects'} • 
-                        {org.memberCount || 0} {(org.memberCount || 0) === 1 ? 'member' : 'members'}
-                      </p>
-                      <div className="mt-4 flex justify-end">
-                        <Button variant="outline" size="sm" asChild>
-                          <Link href={`/organizations/${org.id}`}>View</Link>
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+              {projects.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No projects yet</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Updated</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {projects.slice(0, 5).map((project: Project) => (
+                      <TableRow key={project.id}>
+                        <TableCell>
+                          <Link
+                            href={`/projects/${project.id}`}
+                            className="font-medium hover:underline"
+                          >
+                            {project.name}
+                          </Link>
+                        </TableCell>
+                        <TableCell>
+                          <StatusBadge status={project.status} />
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {formatRelativeTime(project.updatedAt)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
-        ) : (
-          <Card>
-            <CardHeader>
-              <CardTitle>No Organizations Yet</CardTitle>
-              <CardDescription>
-                Create your first organization to get started.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex justify-center">
-              <Button onClick={() => router.push("/organizations")}>
-                Create Your First Organization
-              </Button>
-            </CardContent>
-          </Card>
-        )}
+        </div>
       </div>
     </div>
   );
-} 
+}
