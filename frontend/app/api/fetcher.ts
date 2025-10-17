@@ -245,73 +245,7 @@ const createCrudApi = <T>(basePath: string, entityName: string) => ({
 /**
  * Organizations API functions
  */
-export const organizationsApi = {
-  list: async () => {
-    try {
-      const response = await apiFetch<{ organizations: any[] }>('/api/v1/organizations');
-      return response;
-    } catch (error) {
-      handleApiError(`list organizations`, error);
-      throw error;
-    }
-  },
-
-  create: async (data: any) => {
-    try {
-      const response = await apiFetch<{ organization: any }>('/api/v1/organizations', {
-        method: 'POST',
-        body: data,
-      });
-      
-      // Ensure we have an organization object, even if empty
-      if (!response.data) {
-        response.data = { organization: {} };
-      } else if (!response.data.organization) {
-        response.data.organization = {};
-      }
-      
-      return response;
-    } catch (error) {
-      handleApiError(`create organization`, error);
-      throw error;
-    }
-  },
-
-  get: async (id: string) => {
-    try {
-      const response = await apiFetch<{ organization: any }>(`/api/v1/organizations/${id}`);
-      return response;
-    } catch (error) {
-      handleApiError(`get organization`, error);
-      throw error;
-    }
-  },
-
-  update: async (id: string, data: any) => {
-    try {
-      const response = await apiFetch<{ organization: any }>(`/api/v1/organizations/${id}`, {
-        method: 'PUT',
-        body: data,
-      });
-      return response;
-    } catch (error) {
-      handleApiError(`update organization`, error);
-      throw error;
-    }
-  },
-
-  delete: async (id: string) => {
-    try {
-      const response = await apiFetch(`/api/v1/organizations/${id}`, {
-        method: 'DELETE',
-      });
-      return response;
-    } catch (error) {
-      handleApiError(`delete organization`, error);
-      throw error;
-    }
-  }
-};
+export const organizationsApi = createCrudApi<any>('/api/v1/organizations', 'organization');
 
 /**
  * Organization Invitations API functions
@@ -374,27 +308,7 @@ export const projectsApi = createCrudApi<any>('/api/v1/projects', 'project');
 /**
  * Subscriptions API functions
  */
-export const subscriptionsApi = {
-  list: async () => {
-    try {
-      const response = await apiFetch<{ subscriptions: any[] }>('/api/v1/subscriptions');
-      return response;
-    } catch (error) {
-      handleApiError('list subscriptions', error);
-      throw error;
-    }
-  },
-
-  get: async (id: string) => {
-    try {
-      const response = await apiFetch<{ subscription: any }>(`/api/v1/subscriptions/${id}`);
-      return response;
-    } catch (error) {
-      handleApiError('get subscription', error);
-      throw error;
-    }
-  },
-};
+export const subscriptionsApi = createCrudApi<any>('/api/v1/subscriptions', 'subscription');
 
 /**
  * User API functions

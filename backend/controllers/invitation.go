@@ -10,6 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 type InvitationController struct {
@@ -107,9 +108,8 @@ func (ic *InvitationController) ListInvitations(c *gin.Context) {
 }
 
 func (ic *InvitationController) AcceptInvitation(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid invitation ID")
+	id, ok := utils.ParseUUID(c, "id", "invitation")
+	if !ok {
 		return
 	}
 
@@ -125,7 +125,7 @@ func (ic *InvitationController) AcceptInvitation(c *gin.Context) {
 	}
 
 	var invitation models.OrganizationInvitation
-	err = db.DB.Where("id = ? AND email = ? AND status = ? AND expires_at > ?", 
+	err := db.DB.Where("id = ? AND email = ? AND status = ? AND expires_at > ?", 
 		id, user.Email, "pending", time.Now()).
 		First(&invitation).Error
 	
@@ -134,28 +134,14 @@ func (ic *InvitationController) AcceptInvitation(c *gin.Context) {
 		return
 	}
 
-	tx := db.DB.Begin()
-	if tx.Error != nil {
-		utils.ServerErrorResponse(c, tx.Error)
-		return
-	}
-
-	invitation.Status = "accepted"
-	if err := tx.Save(&invitation).Error; err != nil {
-		tx.Rollback()
-		utils.ServerErrorResponse(c, err)
-		return
-	}
-
-	if err := tx.Exec("INSERT INTO user_organizations (user_id, organization_id) VALUES (?, ?)", 
-		userID, invitation.OrganizationID).Error; err != nil {
-		tx.Rollback()
-		utils.ServerErrorResponse(c, err)
-		return
-	}
-
-	if err := tx.Commit().Error; err != nil {
-		utils.ServerErrorResponse(c, err)
+	if !utils.WithTransaction(c, func(tx *gorm.DB) error {
+		invitation.Status = "accepted"
+		if err := tx.Save(&invitation).Error; err != nil {
+			return err
+		}
+		return tx.Exec("INSERT INTO user_organizations (user_id, organization_id) VALUES (?, ?)", 
+			userID, invitation.OrganizationID).Error
+	}) {
 		return
 	}
 
@@ -163,9 +149,8 @@ func (ic *InvitationController) AcceptInvitation(c *gin.Context) {
 }
 
 func (ic *InvitationController) DeclineInvitation(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid invitation ID")
+	id, ok := utils.ParseUUID(c, "id", "invitation")
+	if !ok {
 		return
 	}
 
@@ -181,7 +166,7 @@ func (ic *InvitationController) DeclineInvitation(c *gin.Context) {
 	}
 
 	var invitation models.OrganizationInvitation
-	err = db.DB.Where("id = ? AND email = ? AND status = ?", 
+	err := db.DB.Where("id = ? AND email = ? AND status = ?", 
 		id, user.Email, "pending").
 		First(&invitation).Error
 	

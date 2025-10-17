@@ -54,9 +54,8 @@ func (sc *SubscriptionController) ListSubscriptions(c *gin.Context) {
 }
 
 func (sc *SubscriptionController) GetSubscription(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid subscription ID")
+	id, ok := utils.ParseUUID(c, "id", "subscription")
+	if !ok {
 		return
 	}
 

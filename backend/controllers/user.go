@@ -34,14 +34,7 @@ func (uc *UserController) GetCurrentUser(c *gin.Context) {
 		return
 	}
 
-	utils.SuccessResponse(c, http.StatusOK, "", gin.H{
-		"id":        user.ID,
-		"email":     user.Email,
-		"firstName": user.FirstName,
-		"lastName":  user.LastName,
-		"isActive":  user.IsActive,
-		"role":      user.Role,
-	})
+	utils.SuccessResponse(c, http.StatusOK, "", user.ToPublicJSON())
 }
 
 func (uc *UserController) UpdateCurrentUser(c *gin.Context) {
@@ -84,14 +77,7 @@ func (uc *UserController) UpdateCurrentUser(c *gin.Context) {
 		return
 	}
 
-	utils.SuccessResponse(c, http.StatusOK, "User updated successfully", gin.H{
-		"id":        user.ID,
-		"email":     user.Email,
-		"firstName": user.FirstName,
-		"lastName":  user.LastName,
-		"isActive":  user.IsActive,
-		"role":      user.Role,
-	})
+	utils.SuccessResponse(c, http.StatusOK, "User updated successfully", gin.H{"user": user.ToPublicJSON()})
 }
 
 func (uc *UserController) DeleteCurrentUser(c *gin.Context) {

@@ -12,6 +12,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 type AuthController struct {
@@ -46,10 +47,7 @@ func (ac *AuthController) Register(c *gin.Context) {
 		return
 	}
 
-	var existingUser models.User
-	result := db.DB.Where("email = ?", req.Email.Value).First(&existingUser)
-	if result.RowsAffected > 0 {
-		utils.ErrorResponse(c, http.StatusConflict, "User with this email already exists")
+	if !utils.RequireNotExists[models.User](c, "User with this email already exists", "email = ?", req.Email.Value) {
 		return
 	}
 
@@ -80,13 +78,7 @@ func (ac *AuthController) Register(c *gin.Context) {
 	}
 
 	utils.SuccessResponse(c, http.StatusCreated, "User registered successfully", gin.H{
-		"user": gin.H{
-			"id":        user.ID,
-			"email":     user.Email,
-			"firstName": user.FirstName,
-			"lastName":  user.LastName,
-			"role":      user.Role,
-		},
+		"user":  user.ToPublicJSON(),
 		"token": token,
 	})
 }
@@ -118,13 +110,7 @@ func (ac *AuthController) Login(c *gin.Context) {
 
 	utils.SuccessResponse(c, http.StatusOK, "Login successful", gin.H{
 		"token": token,
-		"user": gin.H{
-			"id":        user.ID,
-			"email":     user.Email,
-			"firstName": user.FirstName,
-			"lastName":  user.LastName,
-			"role":      user.Role,
-		},
+		"user":  user.ToPublicJSON(),
 	})
 }
 
@@ -217,26 +203,12 @@ func (ac *AuthController) ResetPassword(c *gin.Context) {
 		return
 	}
 
-	tx := db.DB.Begin()
-	if tx.Error != nil {
-		utils.ServerErrorResponse(c, tx.Error)
-		return
-	}
-
-	if err := tx.Model(&resetToken.User).Update("password_hash", hashedPassword).Error; err != nil {
-		tx.Rollback()
-		utils.ServerErrorResponse(c, err)
-		return
-	}
-
-	if err := tx.Delete(&resetToken).Error; err != nil {
-		tx.Rollback()
-		utils.ServerErrorResponse(c, err)
-		return
-	}
-
-	if err := tx.Commit().Error; err != nil {
-		utils.ServerErrorResponse(c, err)
+	if !utils.WithTransaction(c, func(tx *gorm.DB) error {
+		if err := tx.Model(&resetToken.User).Update("password_hash", hashedPassword).Error; err != nil {
+			return err
+		}
+		return tx.Delete(&resetToken).Error
+	}) {
 		return
 	}
 

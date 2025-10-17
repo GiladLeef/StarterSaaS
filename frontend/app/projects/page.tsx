@@ -10,6 +10,9 @@ import { useResourceList } from "@/app/hooks/use-resource-list";
 import { useFormDialog } from "@/app/hooks/use-form-dialog";
 import { CreateDialog } from "@/app/components/create-dialog";
 import { projectsApi, organizationsApi } from "@/app/api/fetcher";
+import { formatRelativeTime } from "@/app/utils/date-utils";
+import { LoadingPage } from "@/app/components/loading-page";
+import { ErrorAlert } from "@/app/components/error-alert";
 
 interface Organization {
   id: string;
@@ -63,29 +66,8 @@ export default function ProjectsPage() {
     });
   };
 
-  const formatRelativeTime = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now.getTime() - date.getTime());
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 0) return "Today";
-    if (diffDays === 1) return "Yesterday";
-    if (diffDays < 7) return `${diffDays} days ago`;
-    if (diffDays < 30) {
-      const weeks = Math.floor(diffDays / 7);
-      return `${weeks} ${weeks === 1 ? "week" : "weeks"} ago`;
-    }
-    const months = Math.floor(diffDays / 30);
-    return `${months} ${months === 1 ? "month" : "months"} ago`;
-  };
-
   if (projectsLoading || orgsLoading) {
-    return (
-      <div className="flex min-h-screen w-full flex-col items-center justify-center">
-        <p>Loading projects...</p>
-      </div>
-    );
+    return <LoadingPage message="Loading projects..." />;
   }
 
   const statusCounts = {
