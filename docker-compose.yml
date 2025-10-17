@@ -18,7 +18,7 @@ services:
 
   frontend:
     build:
-      context: ./interface
+      context: ./frontend
       dockerfile: Dockerfile
     ports:
       - "3000:3000"
