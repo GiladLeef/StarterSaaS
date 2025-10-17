@@ -10,9 +10,7 @@ import (
 	"gorm.io/gorm"
 )
 
-type InvitationController struct {
-	BaseController
-}
+type InvitationController struct{}
 
 type CreateInvitationRequest struct {
 	Email          fields.Email
@@ -22,7 +20,7 @@ type CreateInvitationRequest struct {
 func (ic *InvitationController) CreateInvitation(c *gin.Context) { utils.H(c, func() {
 	req := utils.Get(utils.BindAndValidate[CreateInvitationRequest](c))
 	orgID := utils.Get(utils.GetUUID(c, req.OrganizationID.Value))
-	userID := utils.Get(ic.RequireAuthentication(c))
+	userID := utils.RequireAuth(c)
 	
 	utils.Check(utils.Try(utils.CheckOrganizationMembership(userID, orgID)))
 	
@@ -46,13 +44,15 @@ func (ic *InvitationController) CreateInvitation(c *gin.Context) { utils.H(c, fu
 })}
 
 func (ic *InvitationController) ListUserInvitations(c *gin.Context) { utils.H(c, func() {
-	user := utils.Get(utils.RequireAuthenticatedUser(c, ic))
+	userID := utils.RequireAuth(c)
+	user := utils.Try(utils.ByID[models.User](userID))
 	invitations := utils.Try(utils.FindUserPendingInvitations(user.Email))
 	utils.Respond(c, utils.StatusOK, "", gin.H{"invitations": invitations})
 })}
 
 func (ic *InvitationController) AcceptInvitation(c *gin.Context) { utils.H(c, func() {
-	user := utils.Get(utils.RequireAuthenticatedUser(c, ic))
+	userID := utils.RequireAuth(c)
+	user := utils.Try(utils.ByID[models.User](userID))
 	invitation := utils.FetchByParam[models.OrganizationInvitation](c, "id")
 	
 	utils.Check(invitation.Email == user.Email)
@@ -69,7 +69,8 @@ func (ic *InvitationController) AcceptInvitation(c *gin.Context) { utils.H(c, fu
 })}
 
 func (ic *InvitationController) DeclineInvitation(c *gin.Context) { utils.H(c, func() {
-	user := utils.Get(utils.RequireAuthenticatedUser(c, ic))
+	userID := utils.RequireAuth(c)
+	user := utils.Try(utils.ByID[models.User](userID))
 	invitation := utils.FetchByParam[models.OrganizationInvitation](c, "id")
 	
 	utils.Check(invitation.Email == user.Email)

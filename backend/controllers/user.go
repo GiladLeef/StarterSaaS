@@ -2,16 +2,13 @@ package controllers
 
 import (
 	"platform/backend/fields"
-	"platform/backend/middleware"
 	"platform/backend/models"
 	"platform/backend/utils"
 
 	"github.com/gin-gonic/gin"
 )
 
-type UserController struct {
-	BaseController
-}
+type UserController struct{}
 
 type UpdateUserRequest struct {
 	FirstName fields.FirstName
@@ -20,30 +17,30 @@ type UpdateUserRequest struct {
 }
 
 func (uc *UserController) GetCurrentUser(c *gin.Context) { utils.H(c, func() {
-	userID := utils.Get(middleware.GetUserID(c))
+	userID := utils.GetCurrentUserID(c)
 	user := utils.Try(utils.ByID[models.User](userID))
 	utils.Respond(c, utils.StatusOK, "", utils.ToPublicJSON(user))
 })}
 
 func (uc *UserController) UpdateCurrentUser(c *gin.Context) { utils.H(c, func() {
 	req := utils.Get(utils.BindAndValidate[UpdateUserRequest](c))
-	userID := utils.Get(middleware.GetUserID(c))
+	userID := utils.GetCurrentUserID(c)
 	user := utils.Try(utils.ByID[models.User](userID))
 	
-	utils.UpdateStringField(&user.FirstName, req.FirstName.Value)
-	utils.UpdateStringField(&user.LastName, req.LastName.Value)
-	
-	if req.Email.Value != "" && req.Email.Value != user.Email {
-		utils.Check(utils.MustNotExistExcept[models.User](c, "Email is already taken", "email", req.Email.Value, userID))
-		user.Email = req.Email.Value
+	values := utils.ExtractFieldValues(req)
+	if email, ok := values["Email"].(string); ok && email != "" && email != user.Email {
+		utils.Check(utils.MustNotExistExcept[models.User](c, "Email is already taken", "email", email, userID))
+		user.Email = email
 	}
+	
+	utils.AutoUpdate(&user, req)
 	
 	utils.TryErr(utils.HandleCRUD(c, "update", &user, "user"))
 	utils.CrudSuccess(c, "update", "user", utils.ToPublicJSON(user))
 })}
 
 func (uc *UserController) DeleteCurrentUser(c *gin.Context) { utils.H(c, func() {
-	userID := utils.Get(middleware.GetUserID(c))
+	userID := utils.GetCurrentUserID(c)
 	user := utils.Try(utils.ByID[models.User](userID))
 	utils.TryErr(utils.HandleCRUD(c, "delete", &user, "user"))
 	utils.CrudSuccess(c, "delete", "user", nil)

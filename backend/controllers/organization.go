@@ -10,9 +10,7 @@ import (
 	"gorm.io/gorm"
 )
 
-type OrganizationController struct {
-	BaseController
-}
+type OrganizationController struct{}
 
 type CreateOrganizationRequest struct {
 	Name        fields.Name
@@ -26,21 +24,26 @@ type UpdateOrganizationRequest struct {
 }
 
 func (oc *OrganizationController) ListOrganizations(c *gin.Context) { utils.H(c, func() {
-	userID := utils.Get(oc.RequireAuthentication(c))
+	userID := utils.RequireAuth(c)
 	organizations := utils.Try(utils.GetUserOrganizations(userID))
 	utils.Respond(c, utils.StatusOK, "", gin.H{"organizations": organizations})
 })}
 
 func (oc *OrganizationController) CreateOrganization(c *gin.Context) { utils.H(c, func() {
-	req := utils.Get(utils.BindAndValidate[CreateOrganizationRequest](c))
-	userID := utils.Get(oc.RequireAuthentication(c))
+	req := *utils.BindResource[CreateOrganizationRequest](c)
+	userID := utils.RequireAuth(c)
 
-	slug := utils.GenerateUniqueSlug[models.Organization](req.Name.Value, req.Slug.Value, "slug")
+	values := utils.ExtractValues(req)
+	slug := utils.GenerateUniqueSlug[models.Organization](
+		values["Name"].(string), 
+		values["Slug"].(string), 
+		"slug",
+	)
 
 	org := models.Organization{
-		Name:        req.Name.Value,
+		Name:        values["Name"].(string),
 		Slug:        slug,
-		Description: req.Description.Value,
+		Description: values["Description"].(string),
 	}
 
 	utils.TryErr(utils.Transaction(c, func(tx *gorm.DB) error {
@@ -52,25 +55,15 @@ func (oc *OrganizationController) CreateOrganization(c *gin.Context) { utils.H(c
 })}
 
 func (oc *OrganizationController) GetOrganization(c *gin.Context) { utils.H(c, func() {
-	org := utils.FetchByParam[models.Organization](c, "id")
-	utils.Respond(c, utils.StatusOK, "", gin.H{"organization": org})
+	utils.RestGet[models.Organization](c, "organization")
 })}
 
 func (oc *OrganizationController) UpdateOrganization(c *gin.Context) { utils.H(c, func() {
-	org := utils.FetchByParam[models.Organization](c, "id")
-	req := utils.Get(utils.BindAndValidate[UpdateOrganizationRequest](c))
-	
-	utils.UpdateStringField(&org.Name, req.Name.Value)
-	utils.UpdateStringField(&org.Description, req.Description.Value)
-	
-	utils.TryErr(utils.HandleCRUD(c, "update", &org, "organization"))
-	utils.CrudSuccess(c, "update", "organization", org)
+	utils.RestUpdate[models.Organization, UpdateOrganizationRequest](c, "organization")
 })}
 
 func (oc *OrganizationController) DeleteOrganization(c *gin.Context) { utils.H(c, func() {
-	org := utils.FetchByParam[models.Organization](c, "id")
-	utils.TryErr(utils.HandleCRUD(c, "delete", &org, "organization"))
-	utils.CrudSuccess(c, "delete", "organization", nil)
+	utils.RestDelete[models.Organization](c, "organization")
 })}
 
 func (oc *OrganizationController) FindUserOrganizations(userID uuid.UUID, organizations *[]models.Organization) {

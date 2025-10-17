@@ -7,6 +7,25 @@ import (
 	"github.com/google/uuid"
 )
 
+func GetCurrentUserID(c *gin.Context) uuid.UUID {
+	userID, exists := c.Get("userID")
+	Check(exists)
+	id, ok := userID.(uuid.UUID)
+	Check(ok)
+	return id
+}
+
+func RequireAuth(c *gin.Context) uuid.UUID {
+	userID := GetCurrentUserID(c)
+	Check(userID != uuid.Nil)
+	return userID
+}
+
+func CheckOwnership(orgID, userID uuid.UUID) bool {
+	isMember, _ := CheckOrganizationMembership(userID, orgID)
+	return isMember
+}
+
 func GetAuthenticatedUser(c *gin.Context, userID uuid.UUID) (*models.User, bool) {
 	user := Try(ByID[models.User](userID))
 	return &user, true
@@ -22,4 +41,3 @@ func RequireAuthenticatedUser(c *gin.Context, bc interface {
 	
 	return GetAuthenticatedUser(c, userID)
 }
-

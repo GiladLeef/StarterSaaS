@@ -12,9 +12,7 @@ import (
 	"gorm.io/gorm"
 )
 
-type AuthController struct {
-	BaseController
-}
+type AuthController struct{}
 
 type RegisterRequest struct {
 	Email     fields.Email
