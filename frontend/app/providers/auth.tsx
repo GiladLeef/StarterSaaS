@@ -48,7 +48,8 @@ const extractUserFromResponse = (userData: any): User | null => {
   
   const userObject = userData.user || userData;
   
-  if (userObject && userObject.id) {
+  // Check for email instead of id (id might not be in public response)
+  if (userObject && userObject.email) {
     return userObject;
   }
   
@@ -56,10 +57,12 @@ const extractUserFromResponse = (userData: any): User | null => {
 };
 
 const handleAuthSuccess = (router: any, redirectPath = "/dashboard") => {
-  // Add a small delay to ensure token is saved before redirecting
-  setTimeout(() => {
+  // Force a page reload to ensure token is properly loaded
+  if (typeof window !== 'undefined') {
+    window.location.href = redirectPath;
+  } else {
     router.push(redirectPath);
-  }, 100);
+  }
 };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -81,7 +84,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         setIsLoading(true);
         
-        // Try to get the current user from the API
+        const hasToken = typeof window !== 'undefined' && localStorage.getItem('authToken');
+        
+        if (!hasToken && !isPublicRoute) {
+          setUser(null);
+          router.push("/login");
+          setIsLoading(false);
+          return;
+        }
+        
+        if (isPublicRoute) {
+          setIsLoading(false);
+          return;
+        }
+        
         try {
           const userData = await authApi.getCurrentUser();
           const userObject = extractUserFromResponse(userData);
