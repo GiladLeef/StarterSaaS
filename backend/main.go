@@ -28,17 +28,15 @@ func main() {
 	}
 
 	adminEmail := os.Getenv("ADMIN_EMAIL")
-	adminPassword := os.Getenv("ADMIN_PASSWORD")
-	adminFirstName := os.Getenv("ADMIN_FIRST_NAME")
-	adminLastName := os.Getenv("ADMIN_LAST_NAME")
 	if adminEmail != "" {
+		adminPassword := os.Getenv("ADMIN_PASSWORD")
+		adminFirstName := os.Getenv("ADMIN_FIRST_NAME")
+		adminLastName := os.Getenv("ADMIN_LAST_NAME")
+		
 		var count int64
 		db.DB.Model(&models.User{}).Where("email = ?", adminEmail).Count(&count)
 		if count == 0 {
-			hashedPassword, err := utils.HashPassword(adminPassword)
-			if err != nil {
-				return
-			}
+			hashedPassword, _ := utils.HashPassword(adminPassword)
 			admin := models.User{
 				Email:        adminEmail,
 				PasswordHash: hashedPassword,
@@ -47,7 +45,7 @@ func main() {
 				IsActive:     true,
 				Role:         "admin",
 			}
-			_ = db.DB.Create(&admin).Error
+			db.DB.Create(&admin)
 		}
 	}
 
