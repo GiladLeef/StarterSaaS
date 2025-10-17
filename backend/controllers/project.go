@@ -40,7 +40,7 @@ func (pc *ProjectController) ListProjects(c *gin.Context) { utils.H(c, func() {
 })}
 
 func (pc *ProjectController) CreateProject(c *gin.Context) { utils.H(c, func() {
-	req := utils.Get(utils.BindJSON[CreateProjectRequest](c))
+	req := utils.Get(utils.BindAndValidate[CreateProjectRequest](c))
 	auth := utils.Get(utils.RequireAuthAndOrg(c, pc, req.OrganizationID.Value))
 
 	project := models.Project{
@@ -74,7 +74,7 @@ func (pc *ProjectController) UpdateProject(c *gin.Context) { utils.H(c, func() {
 	utils.UpdateStringField(&project.Description, req.Description.Value)
 	utils.UpdateStringField(&project.Status, req.Status.Value)
 
-	utils.Check(utils.HandleCRUD(c, "update", &project, "project"))
+	utils.TryErr(utils.HandleCRUD(c, "update", &project, "project"))
 	utils.Respond(c, utils.StatusOK, "Project updated successfully", gin.H{"project": project})
 })}
 
@@ -84,7 +84,7 @@ func (pc *ProjectController) DeleteProject(c *gin.Context) { utils.H(c, func() {
 	project := utils.Try(utils.ByID[models.Project](id))
 	
 	utils.Check(pc.CheckOwnership(project.OrganizationID, userID))
-	utils.Check(utils.HandleCRUD(c, "delete", &project, "project"))
+	utils.TryErr(utils.HandleCRUD(c, "delete", &project, "project"))
 	utils.Respond(c, utils.StatusOK, "Project deleted successfully", nil)
 })}
  

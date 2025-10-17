@@ -52,65 +52,65 @@ func MustExist[T any](c *gin.Context, msg, where string, args ...interface{}) bo
 	return true
 }
 
-func MustNotExist[T any](c *gin.Context, msg, where string, args ...interface{}) bool {
+func MustNotExist[T any](c *gin.Context, msg, where string, args ...interface{}) error {
 	exists, err := CheckExists[T](where, args...)
 	if err != nil {
-		RespondWithError(c, StatusError, err, "Database error")
-		return false
+		return err
 	}
 	if exists {
 		Respond(c, StatusConflict, msg, nil)
-		return false
+		return fmt.Errorf(msg)
 	}
-	return true
+	return nil
 }
 
-func HandleCRUD[T any](c *gin.Context, operation string, model *T, name string) bool {
+func HandleCRUD(c *gin.Context, action string, model interface{}, resourceName string) error {
 	var err error
-	switch operation {
+	switch action {
 	case "create":
 		err = db.DB.Create(model).Error
 	case "update":
 		err = db.DB.Save(model).Error
 	case "delete":
 		err = db.DB.Delete(model).Error
-	case "find":
-		id, ok := GetUUID(c, "id")
-		if !ok {
-			return false
-		}
-		err = db.DB.First(model, id).Error
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			Respond(c, StatusNotFound, fmt.Sprintf("%s not found", strings.Title(name)), nil)
-			return false
-		}
+	default:
+		return fmt.Errorf("unknown action: %s", action)
 	}
 	
 	if err != nil {
-		RespondWithError(c, StatusError, err, "Operation failed")
-		return false
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			if c != nil {
+				NotFoundResponse(c, strings.Title(resourceName)+" not found")
+			}
+			return err
+		}
+		if c != nil {
+			RespondWithError(c, StatusError, err, "Failed to "+action+" "+resourceName)
+		}
+		return err
 	}
-	return true
+	
+	return nil
 }
 
 func BindAndValidate[T any](c *gin.Context) (*T, bool) {
 	var req T
 	if err := c.ShouldBindJSON(&req); err != nil {
-		Respond(c, StatusBadRequest, err.Error(), nil)
+		ValidationErrorResponse(c, err)
 		return nil, false
 	}
 	return &req, true
 }
 
-func Execute(c *gin.Context, fn func() error, errMsg string) bool {
+func Execute(c *gin.Context, fn func() error, msg string) error {
 	if err := fn(); err != nil {
-		RespondWithError(c, StatusError, err, errMsg)
-		return false
+		RespondWithError(c, StatusError, err, msg)
+		return err
 	}
-	return true
+	return nil
 }
 
-func Transaction(c *gin.Context, fn func(*gorm.DB) error) bool {
+func Transaction(c *gin.Context, fn func(tx *gorm.DB) error) error {
 	return Execute(c, func() error {
 		tx := db.DB.Begin()
 		if tx.Error != nil {
@@ -134,3 +134,15 @@ func ApplyUpdates[T any](target *T, updates map[string]interface{}) {
 	}
 }
 
+func UpdateField[T comparable](target *T, value T) {
+	var zero T
+	if value != zero {
+		*target = value
+	}
+}
+
+func UpdateStringField(target *string, value string) {
+	if value != "" {
+		*target = value
+	}
+}

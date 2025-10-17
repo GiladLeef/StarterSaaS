@@ -30,6 +30,12 @@ func Try[T any](val T, err error) T {
 	return val
 }
 
+func TryErr(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
+
 func Catch(c *gin.Context, fn func()) {
 	defer func() {
 		if r := recover(); r != nil {

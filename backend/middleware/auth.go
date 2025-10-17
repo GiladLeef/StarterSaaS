@@ -11,34 +11,28 @@ import (
 
 func AuthRequired() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Printf("Auth middleware panic: %v", r)
+				if err, ok := r.(error); ok {
+					utils.UnauthorizedResponse(c, err.Error())
+				} else {
+					utils.UnauthorizedResponse(c, "Authentication failed")
+				}
+				c.Abort()
+			}
+		}()
+
 		authHeader := c.GetHeader("Authorization")
-		path := c.Request.URL.Path
+		log.Printf("Auth check for path: %s", c.Request.URL.Path)
 		
-		log.Printf("Auth check for path: %s", path)
+		utils.Check(authHeader != "" && strings.HasPrefix(authHeader, "Bearer "))
 		
-		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
-			log.Printf("Missing or invalid Authorization header: %s", authHeader)
-			utils.UnauthorizedResponse(c, "Authorization header is required")
-			c.Abort()
-			return
-		}
-
 		token := strings.TrimPrefix(authHeader, "Bearer ")
-		if token == "" {
-			log.Printf("Empty token after prefix removal")
-			utils.UnauthorizedResponse(c, "Token is required")
-			c.Abort()
-			return
-		}
+		utils.Check(token != "")
 
-		userID, err := utils.ValidateToken(token)
-		if err != nil {
-			log.Printf("Token validation failed: %v", err)
-			utils.UnauthorizedResponse(c, "Invalid token: "+err.Error())
-			c.Abort()
-			return
-		}
-
+		userID := utils.Try(utils.ValidateToken(token))
+		
 		c.Set("userID", userID)
 		log.Printf("Authentication successful for user: %s", userID)
 		

@@ -43,7 +43,7 @@ func (ic *InvitationController) CreateInvitation(c *gin.Context) { utils.H(c, fu
 		ExpiresAt:      time.Now().AddDate(0, 0, 7), 
 	}
 
-	utils.Check(utils.HandleCRUD(c, "create", &invitation, "invitation"))
+	utils.TryErr(utils.HandleCRUD(c, "create", &invitation, "invitation"))
 	utils.Respond(c, utils.StatusCreated, "Invitation sent successfully", gin.H{"invitation": invitation})
 })}
 
@@ -58,7 +58,7 @@ func (ic *InvitationController) AcceptInvitation(c *gin.Context) { utils.H(c, fu
 	user := utils.Get(utils.RequireAuthenticatedUser(c, ic))
 	invitation := utils.Try(utils.FindValidInvitation(id, user.Email))
 
-	utils.Check(utils.Transaction(c, func(tx *gorm.DB) error {
+	utils.TryErr(utils.Transaction(c, func(tx *gorm.DB) error {
 		invitation.Status = "accepted"
 		tx.Save(invitation)
 		return utils.AddOrganizationMember(user.ID, invitation.OrganizationID)
@@ -73,6 +73,6 @@ func (ic *InvitationController) DeclineInvitation(c *gin.Context) { utils.H(c, f
 	invitation := utils.Try(utils.FindUserInvitation(id, user.Email))
 
 	invitation.Status = "declined"
-	utils.Check(utils.HandleCRUD(c, "update", invitation, "invitation"))
+	utils.TryErr(utils.HandleCRUD(c, "update", invitation, "invitation"))
 	utils.Respond(c, utils.StatusOK, "Invitation declined successfully", nil)
 })} 

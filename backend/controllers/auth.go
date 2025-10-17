@@ -52,7 +52,7 @@ func (ac *AuthController) Register(c *gin.Context) { utils.H(c, func() {
 		Role:         "user",
 	}
 
-	utils.Check(utils.HandleCRUD(c, "create", &user, "user"))
+	utils.TryErr(utils.HandleCRUD(c, "create", &user, "user"))
 	token := utils.Try(utils.GenerateToken(user.ID))
 
 	utils.Respond(c, utils.StatusCreated, "User registered successfully", gin.H{
@@ -102,7 +102,7 @@ func (ac *AuthController) ForgotPassword(c *gin.Context) { utils.H(c, func() {
 		Token:  token,
 	}
 
-	utils.Check(utils.HandleCRUD(c, "create", &resetToken, "reset_token"))
+	utils.TryErr(utils.HandleCRUD(c, "create", &resetToken, "reset_token"))
 
 	frontendURL := os.Getenv("FRONTEND_URL")
 	resetURL := frontendURL + "/reset-password"
@@ -122,7 +122,7 @@ func (ac *AuthController) ResetPassword(c *gin.Context) { utils.H(c, func() {
 
 	hashedPassword := utils.Try(utils.HashPassword(req.Password.Value))
 
-	utils.Check(utils.Transaction(c, func(tx *gorm.DB) error {
+	utils.TryErr(utils.Transaction(c, func(tx *gorm.DB) error {
 		tx.Model(&resetToken.User).Update("password_hash", hashedPassword)
 		return tx.Delete(resetToken).Error
 	}))

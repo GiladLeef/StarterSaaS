@@ -38,13 +38,13 @@ func (uc *UserController) UpdateCurrentUser(c *gin.Context) { utils.H(c, func() 
 		user.Email = req.Email.Value
 	}
 
-	utils.Check(utils.HandleCRUD(c, "update", &user, "user"))
+	utils.TryErr(utils.HandleCRUD(c, "update", &user, "user"))
 	utils.Respond(c, utils.StatusOK, "User updated successfully", gin.H{"user": utils.ToPublicJSON(user)})
 })}
 
 func (uc *UserController) DeleteCurrentUser(c *gin.Context) { utils.H(c, func() {
 	userID := utils.Get(middleware.GetUserID(c))
 	user := utils.Try(utils.ByID[models.User](userID))
-	utils.Check(utils.HandleCRUD(c, "delete", &user, "user"))
+	utils.TryErr(utils.HandleCRUD(c, "delete", &user, "user"))
 	utils.Respond(c, utils.StatusOK, "User deleted successfully", nil)
 })} 

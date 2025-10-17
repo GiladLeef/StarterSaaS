@@ -59,7 +59,7 @@ func (oc *OrganizationController) CreateOrganization(c *gin.Context) { utils.H(c
 		Description: req.Description.Value,
 	}
 
-	utils.Check(utils.Transaction(c, func(tx *gorm.DB) error {
+	utils.TryErr(utils.Transaction(c, func(tx *gorm.DB) error {
 		tx.Create(&org)
 		return utils.AddOrganizationMember(userID, org.ID)
 	}))
@@ -83,7 +83,7 @@ func (oc *OrganizationController) UpdateOrganization(c *gin.Context) { utils.H(c
 	utils.UpdateStringField(&org.Name, req.Name.Value)
 	utils.UpdateStringField(&org.Description, req.Description.Value)
 
-	utils.Check(utils.HandleCRUD(c, "update", &org, "organization"))
+	utils.TryErr(utils.HandleCRUD(c, "update", &org, "organization"))
 	utils.Respond(c, utils.StatusOK, "Organization updated successfully", gin.H{"organization": org})
 })}
 
@@ -91,7 +91,7 @@ func (oc *OrganizationController) DeleteOrganization(c *gin.Context) { utils.H(c
 	id := utils.Get(utils.ParseUUID(c, "id", "organization"))
 	utils.Get(oc.CheckOrganizationAccess(c, id))
 	org := utils.Try(utils.ByID[models.Organization](id))
-	utils.Check(utils.HandleCRUD(c, "delete", &org, "organization"))
+	utils.TryErr(utils.HandleCRUD(c, "delete", &org, "organization"))
 	utils.Respond(c, utils.StatusOK, "Organization deleted successfully", nil)
 })}
 

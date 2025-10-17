@@ -1,94 +1,65 @@
 package middleware
 
 import (
-	"net/http"
-	"platform/backend/db"
 	"platform/backend/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
-// RequireOrganizationAccess checks if the authenticated user has access to the organization
 func RequireOrganizationAccess() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Get organization ID from route parameter
-		orgID, err := uuid.Parse(c.Param("id"))
-		if err != nil {
-			utils.ErrorResponse(c, http.StatusBadRequest, "Invalid organization ID")
-			c.Abort()
-			return
-		}
+		defer func() {
+			if r := recover(); r != nil {
+				if err, ok := r.(error); ok {
+					utils.UnauthorizedResponse(c, err.Error())
+				} else {
+					utils.UnauthorizedResponse(c, "Access denied")
+				}
+				c.Abort()
+			}
+		}()
 
+		orgID := utils.Try(uuid.Parse(c.Param("id")))
+		
 		userID, exists := c.Get("userID")
-		if !exists {
-			utils.UnauthorizedResponse(c, "User not authenticated")
-			c.Abort()
-			return
-		}
+		utils.Check(exists)
 
-		userUUID, err := uuid.Parse(userID.(string))
-		if err != nil {
-			utils.UnauthorizedResponse(c, "Invalid user ID")
-			c.Abort()
-			return
-		}
+		userUUID, ok := userID.(uuid.UUID)
+		utils.Check(ok)
 
-		var count int64
-		err = db.DB.Table("user_organizations").
-			Where("user_id = ? AND organization_id = ?", userUUID, orgID).
-			Count(&count).Error
+		isMember := utils.Try(utils.CheckOrganizationMembership(userUUID, orgID))
+		utils.Check(isMember)
 
-		if err != nil || count == 0 {
-			utils.UnauthorizedResponse(c, "You don't have access to this organization")
-			c.Abort()
-			return
-		}
-
-		// Store organization ID in context for use by handlers
 		c.Set("organizationID", orgID)
 		c.Next()
 	}
 }
 
-// RequireProjectAccess checks if the authenticated user has access to a project
 func RequireProjectAccess() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Get project ID from route parameter
-		projectID, err := uuid.Parse(c.Param("id"))
-		if err != nil {
-			utils.ErrorResponse(c, http.StatusBadRequest, "Invalid project ID")
-			c.Abort()
-			return
-		}
+		defer func() {
+			if r := recover(); r != nil {
+				if err, ok := r.(error); ok {
+					utils.UnauthorizedResponse(c, err.Error())
+				} else {
+					utils.UnauthorizedResponse(c, "Access denied")
+				}
+				c.Abort()
+			}
+		}()
 
+		projectID := utils.Try(uuid.Parse(c.Param("id")))
+		
 		userID, exists := c.Get("userID")
-		if !exists {
-			utils.UnauthorizedResponse(c, "User not authenticated")
-			c.Abort()
-			return
-		}
+		utils.Check(exists)
 
-		userUUID, err := uuid.Parse(userID.(string))
-		if err != nil {
-			utils.UnauthorizedResponse(c, "Invalid user ID")
-			c.Abort()
-			return
-		}
+		userUUID, ok := userID.(uuid.UUID)
+		utils.Check(ok)
 
-		var count int64
-		err = db.DB.Table("projects").
-			Joins("JOIN user_organizations ON projects.organization_id = user_organizations.organization_id").
-			Where("projects.id = ? AND user_organizations.user_id = ?", projectID, userUUID).
-			Count(&count).Error
+		hasAccess := utils.Try(utils.CheckProjectAccess(userUUID, projectID))
+		utils.Check(hasAccess)
 
-		if err != nil || count == 0 {
-			utils.UnauthorizedResponse(c, "You don't have access to this project")
-			c.Abort()
-			return
-		}
-
-		// Store project ID in context for use by handlers
 		c.Set("projectID", projectID)
 		c.Next()
 	}
