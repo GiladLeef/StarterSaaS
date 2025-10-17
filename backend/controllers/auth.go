@@ -78,7 +78,7 @@ func (ac *AuthController) Register(c *gin.Context) {
 	}
 
 	utils.SuccessResponse(c, http.StatusCreated, "User registered successfully", gin.H{
-		"user":  user.ToPublicJSON(),
+		"user":  utils.ToPublicJSON(user),
 		"token": token,
 	})
 }
@@ -110,7 +110,7 @@ func (ac *AuthController) Login(c *gin.Context) {
 
 	utils.SuccessResponse(c, http.StatusOK, "Login successful", gin.H{
 		"token": token,
-		"user":  user.ToPublicJSON(),
+		"user":  utils.ToPublicJSON(user),
 	})
 }
 

@@ -43,25 +43,16 @@ func (ic *InvitationController) CreateInvitation(c *gin.Context) {
 	var user models.User
 	result := db.DB.Where("email = ?", req.Email.Value).First(&user)
 	if result.RowsAffected > 0 {
-		var count int64
-		db.DB.Table("user_organizations").
-			Where("organization_id = ? AND user_id = ?", orgID, user.ID).
-			Count(&count)
-		
-		if count > 0 {
-			utils.ErrorResponse(c, http.StatusConflict, "User is already a member of this organization")
+		if !utils.RequireNotOrganizationMember(c, user.ID, orgID) {
 			return
 		}
 	}
 
-	var existingInvitation models.OrganizationInvitation
-	result = db.DB.Where("organization_id = ? AND email = ? AND status = ?", 
-		orgID, req.Email.Value, "pending").
-		Where("expires_at > ?", time.Now()).
-		First(&existingInvitation)
-	
-	if result.RowsAffected > 0 {
-		utils.ErrorResponse(c, http.StatusConflict, "An invitation is already pending for this email")
+	// Check for existing pending invitation
+	if !utils.RequireNotExists[models.OrganizationInvitation](c, 
+		"An invitation is already pending for this email",
+		"organization_id = ? AND email = ? AND status = ? AND expires_at > ?",
+		orgID, req.Email.Value, "pending", time.Now()) {
 		return
 	}
 
@@ -82,14 +73,8 @@ func (ic *InvitationController) CreateInvitation(c *gin.Context) {
 }
 
 func (ic *InvitationController) ListInvitations(c *gin.Context) {
-	userID, ok := ic.RequireAuthentication(c)
+	user, ok := utils.RequireAuthenticatedUser(c, ic)
 	if !ok {
-		return
-	}
-
-	var user models.User
-	if err := ic.FindByID(&user, userID); err != nil {
-		utils.NotFoundResponse(c, "User not found")
 		return
 	}
 
@@ -113,14 +98,8 @@ func (ic *InvitationController) AcceptInvitation(c *gin.Context) {
 		return
 	}
 
-	userID, ok := ic.RequireAuthentication(c)
+	user, ok := utils.RequireAuthenticatedUser(c, ic)
 	if !ok {
-		return
-	}
-
-	var user models.User
-	if err := ic.FindByID(&user, userID); err != nil {
-		utils.NotFoundResponse(c, "User not found")
 		return
 	}
 
@@ -140,7 +119,7 @@ func (ic *InvitationController) AcceptInvitation(c *gin.Context) {
 			return err
 		}
 		return tx.Exec("INSERT INTO user_organizations (user_id, organization_id) VALUES (?, ?)", 
-			userID, invitation.OrganizationID).Error
+			user.ID, invitation.OrganizationID).Error
 	}) {
 		return
 	}
@@ -154,14 +133,8 @@ func (ic *InvitationController) DeclineInvitation(c *gin.Context) {
 		return
 	}
 
-	userID, ok := ic.RequireAuthentication(c)
+	user, ok := utils.RequireAuthenticatedUser(c, ic)
 	if !ok {
-		return
-	}
-
-	var user models.User
-	if err := ic.FindByID(&user, userID); err != nil {
-		utils.NotFoundResponse(c, "User not found")
 		return
 	}
 
