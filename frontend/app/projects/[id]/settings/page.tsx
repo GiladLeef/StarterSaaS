@@ -5,10 +5,10 @@ import { useRouter, useParams } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { projectsApi, organizationsApi } from "@/app/api/fetcher";
-import { PageHeader } from "@/app/components/page-header";
-import { LoadingState, ErrorState } from "@/app/components/loading-state";
-import { EntityForm } from "@/app/components/entity-form";
-import { DangerZone } from "@/app/components/danger-zone";
+import { PageHeader } from "@/app/components/layout/header";
+import { LoadingState, ErrorState } from "@/app/components/ui/state";
+import { EntityForm } from "@/app/components/forms/entity";
+import { DangerZone } from "@/app/components/settings/danger";
 import { Label } from "@/components/ui/label";
 
 export default function ProjectSettingsPage() {

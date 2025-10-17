@@ -3,9 +3,9 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
-import { useResourceList } from "@/app/hooks/use-resource-list";
-import { useFormDialog } from "@/app/hooks/use-form-dialog";
-import { CreateDialog } from "@/app/components/create-dialog";
+import { useResourceList } from "@/app/hooks/resources";
+import { useFormDialog } from "@/app/hooks/dialog";
+import { CreateDialog } from "@/app/components/forms/dialog";
 import { organizationsApi, invitationsApi } from "@/app/api/fetcher";
 import { useState, useEffect } from "react";
 

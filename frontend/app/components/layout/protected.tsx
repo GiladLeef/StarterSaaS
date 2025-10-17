@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth } from "@/app/providers/auth-provider";
+import { useAuth } from "@/app/providers/auth";
 import { usePathname } from "next/navigation";
 import { ReactNode } from "react";
 

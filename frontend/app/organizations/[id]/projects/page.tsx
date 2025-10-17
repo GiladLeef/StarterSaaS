@@ -8,9 +8,9 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import Link from "next/link";
 import { organizationsApi, projectsApi } from "@/app/api/fetcher";
-import { formatRelativeTime } from "@/app/utils/date-utils";
-import { PageHeader, PageHeaderAction } from "@/app/components/page-header";
-import { LoadingState, ErrorState } from "@/app/components/loading-state";
+import { formatRelativeTime } from "@/app/utils/dates";
+import { PageHeader, PageHeaderAction } from "@/app/components/layout/header";
+import { LoadingState, ErrorState } from "@/app/components/ui/state";
 
 export default function OrganizationProjectsPage() {
   const router = useRouter();

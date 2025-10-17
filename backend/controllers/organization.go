@@ -93,7 +93,8 @@ func (oc *OrganizationController) CreateOrganization(c *gin.Context) {
 		return
 	}
 
-	if err := tx.Exec("INSERT INTO user_organizations (user_id, organization_id) VALUES (?, ?)", userID, org.ID).Error; err != nil {
+	// Add creator as organization member
+	if err := utils.AddOrganizationMember(userID, org.ID); err != nil {
 		tx.Rollback()
 		utils.ServerErrorResponse(c, err)
 		return
@@ -138,5 +139,10 @@ func (oc *OrganizationController) DeleteOrganization(c *gin.Context) {
 }
 
 func (oc *OrganizationController) FindUserOrganizations(organizations *[]models.Organization, userID uuid.UUID) error {
-	return oc.FindWhere(organizations, "id IN (SELECT organization_id FROM user_organizations WHERE user_id = ?)", userID).Error
+	orgs, err := utils.GetUserOrganizations(userID)
+	if err != nil {
+		return err
+	}
+	*organizations = orgs
+	return nil
 } 

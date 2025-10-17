@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { FormAlert } from "./form-alert";
+import { FormAlert } from "@/app/components/ui/alert";
 
 interface EntityFormProps {
   title: string;

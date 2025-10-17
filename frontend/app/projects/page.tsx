@@ -6,13 +6,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { StatusBadge } from "@/components/ui/status-badge";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useResourceList } from "@/app/hooks/use-resource-list";
-import { useFormDialog } from "@/app/hooks/use-form-dialog";
-import { CreateDialog } from "@/app/components/create-dialog";
+import { useResourceList } from "@/app/hooks/resources";
+import { useFormDialog } from "@/app/hooks/dialog";
+import { CreateDialog } from "@/app/components/forms/dialog";
 import { projectsApi, organizationsApi } from "@/app/api/fetcher";
-import { formatRelativeTime } from "@/app/utils/date-utils";
-import { LoadingPage } from "@/app/components/loading-page";
-import { ErrorAlert } from "@/app/components/error-alert";
+import { formatRelativeTime } from "@/app/utils/dates";
+import { LoadingPage } from "@/app/components/ui/loading";
+import { ErrorAlert } from "@/app/components/ui/error";
 
 interface Organization {
   id: string;

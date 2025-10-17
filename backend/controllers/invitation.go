@@ -118,8 +118,8 @@ func (ic *InvitationController) AcceptInvitation(c *gin.Context) {
 		if err := tx.Save(&invitation).Error; err != nil {
 			return err
 		}
-		return tx.Exec("INSERT INTO user_organizations (user_id, organization_id) VALUES (?, ?)", 
-			user.ID, invitation.OrganizationID).Error
+		// Add user to organization using helper
+		return utils.AddOrganizationMember(user.ID, invitation.OrganizationID)
 	}) {
 		return
 	}

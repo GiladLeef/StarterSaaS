@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { handleApiError } from '../utils/api-client';
+import { handleApiError } from '../utils/helpers';
 
 type FetchFn<T> = () => Promise<T>;
 

@@ -11,9 +11,9 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import Link from "next/link";
 import { organizationsApi, projectsApi, invitationsApi } from "@/app/api/fetcher";
-import { formatRelativeTime } from "@/app/utils/date-utils";
-import { PageHeader, PageHeaderAction } from "@/app/components/page-header";
-import { LoadingState, ErrorState } from "@/app/components/loading-state";
+import { formatRelativeTime } from "@/app/utils/dates";
+import { PageHeader, PageHeaderAction } from "@/app/components/layout/header";
+import { LoadingState, ErrorState } from "@/app/components/ui/state";
 
 export default function OrganizationDetailsPage() {
   const router = useRouter();

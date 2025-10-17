@@ -7,8 +7,8 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { organizationsApi, projectsApi } from "@/app/api/fetcher";
-import { useAuth } from "@/app/providers/auth-provider";
-import { formatRelativeTime } from "@/app/utils/date-utils";
+import { useAuth } from "@/app/providers/auth";
+import { formatRelativeTime } from "@/app/utils/dates";
 import Link from "next/link";
 
 export default function DashboardPage() {

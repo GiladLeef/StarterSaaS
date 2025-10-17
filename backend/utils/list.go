@@ -43,9 +43,18 @@ func ListWithOrgFilter[T any](
 		orgID = &id
 	}
 
-	// Build query
+	// Get user's organization IDs
+	var orgIDs []uuid.UUID
+	if err := db.DB.Table("user_organizations").
+		Where("user_id = ?", userID).
+		Pluck("organization_id", &orgIDs).Error; err != nil {
+		ServerErrorResponse(c, err)
+		return
+	}
+
+	// Build query for resources
 	var resources []T
-	query := db.DB.Where("organization_id IN (SELECT organization_id FROM user_organizations WHERE user_id = ?)", userID)
+	query := db.DB.Where("organization_id IN ?", orgIDs)
 
 	if orgID != nil {
 		query = query.Where("organization_id = ?", *orgID)

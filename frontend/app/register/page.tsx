@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
-import { useAuth } from "@/app/providers/auth-provider";
+import { useAuth } from "@/app/providers/auth";
 
 export default function RegisterPage() {
   const { register, isLoading } = useAuth();
