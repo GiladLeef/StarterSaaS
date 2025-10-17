@@ -54,7 +54,14 @@ export function MainNav() {
     <header className="sticky top-0 z-50 w-full border-b bg-background">
       <div className="mx-auto max-w-7xl w-full px-4 sm:px-6 lg:px-8 flex h-16 items-center justify-between">
         <div className="flex items-center">
-          <Link href="/" className="mr-6 flex items-center space-x-2 font-bold">
+          <Link 
+            href={
+              isAuthenticated 
+                ? (user?.role === 'admin' ? '/admin' : '/dashboard')
+                : '/'
+            } 
+            className="mr-6 flex items-center space-x-2 font-bold"
+          >
             <span>Platform</span>
           </Link>
 

@@ -38,7 +38,11 @@ export default function ResourceManagementPage() {
         const response = await apiFetch(`/api/v1/admin/resources/${resource}`);
         
         if (response.success && response.data) {
-          setData(response.data.data || []);
+          // Backend returns data as: { users: [...], metadata: {...} }
+          // So we need to access response.data[resourceName + 's']
+          const resourceKey = resource + 's';
+          const items = response.data[resourceKey] || [];
+          setData(Array.isArray(items) ? items : []);
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load resource data');
