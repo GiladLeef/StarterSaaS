@@ -1,11 +1,11 @@
 # SaaS Backend Starter
 
-This is a generic, modern and simple full SaaS backend + frontend starter template built with Go, Gin, and GORM with SQLite and Typescript/Next.js on the frontend.
+This is a generic, modern and simple full SaaS backend + frontend starter template built with Go, Gin, and GORM with PostgreSQL and Typescript/Next.js on the frontend.
 
 ## Features
 
 - RESTful API with Gin
-- SQLite database with GORM ORM
+- PostgreSQL database with GORM ORM
 - Automatic database migrations
 - Authentication middleware
 - User management
@@ -16,7 +16,8 @@ This is a generic, modern and simple full SaaS backend + frontend starter templa
 ## Prerequisites
 
 - Go 1.24.3
-- Docker (for containerized deployment)
+- PostgreSQL 16+ (or Docker for containerized deployment)
+- Docker and Docker Compose (recommended for development)
 
 ## Directory Structure
 
@@ -110,26 +111,83 @@ The architecture is designed for modularity:
 
 ## Getting Started
 
+### Using Docker Compose (Recommended)
+
+The easiest way to run the full stack with PostgreSQL:
+
+1. Clone the repository
+2. Create a `.env` file in the root directory with your admin credentials:
+   ```bash
+   ADMIN_EMAIL=admin@example.com
+   ADMIN_PASSWORD=your-secure-password
+   ```
+3. Start all services:
+   ```bash
+   docker-compose up -d
+   ```
+4. Access the application:
+   - Frontend: http://localhost:3000
+   - Backend API: http://localhost:8080
+   - PostgreSQL: localhost:5432
+
 ### Local Development
 
 1. Clone the repository
-2. Create a `.env` file in the root directory (use `.env.example` as a template)
-3. Install dependencies:
+2. Start PostgreSQL (or use Docker):
    ```bash
+   docker run -d \
+     --name postgres \
+     -e POSTGRES_USER=postgres \
+     -e POSTGRES_PASSWORD=postgres \
+     -e POSTGRES_DB=platform \
+     -p 5432:5432 \
+     postgres:16-alpine
+   ```
+3. Create a `.env` file in the backend directory:
+   ```bash
+   # Database
+   DB_HOST=localhost
+   DB_PORT=5432
+   DB_USER=postgres
+   DB_PASSWORD=postgres
+   DB_NAME=platform
+   DB_SSLMODE=disable
+   
+   # Server
+   PORT=8080
+   
+   # JWT
+   JWT_SECRET=your-secret-key-change-in-production
+   JWT_EXPIRY=24h
+   
+   # Admin Account
+   ADMIN_EMAIL=admin@example.com
+   ADMIN_PASSWORD=your-secure-password
+   ```
+4. Install Go dependencies:
+   ```bash
+   cd backend
    go mod download
    ```
-4. Run the application:
+5. Run the application:
    ```bash
    go run main.go
    ```
 
-### Docker
+### Docker (Backend Only)
 
-You can run the application using Docker:
+You can run just the backend using Docker:
 
 ```bash
+cd backend
 docker build -t saas-backend .
-docker run -p 8080:8080 saas-backend
+docker run -p 8080:8080 \
+  -e DB_HOST=host.docker.internal \
+  -e DB_PORT=5432 \
+  -e DB_USER=postgres \
+  -e DB_PASSWORD=postgres \
+  -e DB_NAME=platform \
+  saas-backend
 ```
 
 ## Database Migrations

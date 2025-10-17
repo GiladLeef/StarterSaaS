@@ -4,10 +4,8 @@ import (
 	"platform/backend/config"
 	"fmt"
 	"log"
-	"os"
-	"path/filepath"
 
-	"gorm.io/driver/sqlite"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
@@ -17,15 +15,12 @@ var (
 )
 
 func InitDB() error {
-	dbPath := config.GetDBPath()
-
-	if dir := filepath.Dir(dbPath); dir != "." {
-		if err := os.MkdirAll(dir, 0755); err != nil {
-			return fmt.Errorf("failed to create database directory: %v", err)
-		}
+	dsn, err := config.GetDatabaseDSN()
+	if err != nil {
+		return fmt.Errorf("failed to get database DSN: %v", err)
 	}
 
-	db, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Info),
 	})
 	if err != nil {
@@ -34,7 +29,7 @@ func InitDB() error {
 
 	DB = db
 
-	log.Printf("Connected to database at %s", dbPath)
+	log.Printf("Connected to PostgreSQL database")
 	return nil
 }
 
