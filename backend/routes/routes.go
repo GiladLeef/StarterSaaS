@@ -3,30 +3,23 @@ package routes
 import (
 	"platform/backend/controllers"
 	"platform/backend/middleware"
+	"platform/backend/resources"
 
 	"github.com/gin-gonic/gin"
 )
 
 func SetupRoutes(r *gin.Engine) {
-	healthController := &controllers.HealthController{}
-	authController := &controllers.AuthController{}
-	userController := &controllers.UserController{}
-	orgController := &controllers.OrganizationController{}
-	projectController := &controllers.ProjectController{}
-	subscriptionController := &controllers.SubscriptionController{}
-	invitationController := &controllers.InvitationController{}
-
-	r.GET("/health", healthController.HealthCheck)
+	r.GET("/health", controllers.Health)
 
 	v1 := r.Group("/api/v1")
 	{
 		auth := v1.Group("/auth")
 		{
-			auth.POST("/register", authController.Register)
-			auth.POST("/login", authController.Login)
-			auth.POST("/refresh", authController.RefreshToken)
-			auth.POST("/forgot-password", authController.ForgotPassword)
-			auth.POST("/reset-password", authController.ResetPassword)
+			auth.POST("/register", resources.Register)
+			auth.POST("/login", resources.Login)
+			auth.POST("/refresh", resources.RefreshToken)
+			auth.POST("/forgot-password", resources.ForgotPassword)
+			auth.POST("/reset-password", resources.ResetPassword)
 		}
 
 		protected := v1.Group("/")
@@ -34,45 +27,44 @@ func SetupRoutes(r *gin.Engine) {
 		{
 			users := protected.Group("/users")
 			{
-				users.GET("/me", userController.GetCurrentUser)
-				users.PUT("/me", userController.UpdateCurrentUser)
-				users.DELETE("/me", userController.DeleteCurrentUser)
+				users.GET("/me", resources.GetCurrentUser)
+				users.PUT("/me", resources.UpdateCurrentUser)
+				users.DELETE("/me", resources.DeleteCurrentUser)
 			}
 
 			orgs := protected.Group("/organizations")
 			{
-				orgs.GET("", orgController.ListOrganizations)
-				orgs.POST("", orgController.CreateOrganization)
+				orgs.GET("", resources.ListOrganizations)
+				orgs.POST("", resources.OrganizationHandlers["create"])
 				
-				orgs.GET("/:id", middleware.RequireOrganizationAccess(), orgController.GetOrganization)
-				orgs.PUT("/:id", middleware.RequireOrganizationAccess(), orgController.UpdateOrganization)
-				orgs.DELETE("/:id", middleware.RequireOrganizationAccess(), orgController.DeleteOrganization)
+				orgs.GET("/:id", middleware.RequireOrganizationAccess(), resources.OrganizationHandlers["get"])
+				orgs.PUT("/:id", middleware.RequireOrganizationAccess(), resources.OrganizationHandlers["update"])
+				orgs.DELETE("/:id", middleware.RequireOrganizationAccess(), resources.OrganizationHandlers["delete"])
 			}
 
 			projects := protected.Group("/projects")
 			{
-				projects.GET("", projectController.ListProjects)
-				projects.POST("", projectController.CreateProject)
+				projects.GET("", resources.ListProjects)
+				projects.POST("", resources.ProjectHandlers["create"])
 				
-				projects.GET("/:id", middleware.RequireProjectAccess(), projectController.GetProject)
-				projects.PUT("/:id", middleware.RequireProjectAccess(), projectController.UpdateProject)
-				projects.DELETE("/:id", middleware.RequireProjectAccess(), projectController.DeleteProject)
+				projects.GET("/:id", middleware.RequireProjectAccess(), resources.ProjectHandlers["get"])
+				projects.PUT("/:id", middleware.RequireProjectAccess(), resources.ProjectHandlers["update"])
+				projects.DELETE("/:id", middleware.RequireProjectAccess(), resources.ProjectHandlers["delete"])
 			}
-
 
 			subscriptions := protected.Group("/subscriptions")
 			{
-				subscriptions.GET("", subscriptionController.ListSubscriptions)
-				subscriptions.GET("/:id", subscriptionController.GetSubscription)
+				subscriptions.GET("", resources.SubscriptionHandlers["list"])
+				subscriptions.GET("/:id", resources.SubscriptionHandlers["get"])
 			}
 
 			invitations := protected.Group("/invitations")
 			{
-				invitations.GET("", invitationController.ListUserInvitations)
-				invitations.POST("", invitationController.CreateInvitation)
-				invitations.POST("/:id/accept", invitationController.AcceptInvitation)
-				invitations.POST("/:id/decline", invitationController.DeclineInvitation)
+				invitations.GET("", resources.ListUserInvitations)
+				invitations.POST("", resources.CreateInvitation)
+				invitations.POST("/:id/accept", resources.AcceptInvitation)
+				invitations.POST("/:id/decline", resources.DeclineInvitation)
 			}
 		}
 	}
-} 
+}
