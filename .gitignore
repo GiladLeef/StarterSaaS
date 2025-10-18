@@ -29,6 +29,13 @@ out
 *.out
 go.work
 
+# Compiled binaries
+/backend/backend
+backend
+*.bin
+*.o
+*.a
+
 # Editor directories and files
 .idea
 .vscode/*
