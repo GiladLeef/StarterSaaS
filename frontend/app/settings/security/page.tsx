@@ -1,24 +1,42 @@
 "use client"
 
-import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { IconShieldCheck, IconKey } from "@tabler/icons-react"
+import { useFormDialog } from "@/app/hooks/dialog"
+import { authApi } from "@/app/api/fetcher"
 
 export default function SecuritySettingsPage() {
-  const [isLoading, setIsLoading] = useState(false)
-  const [currentPassword, setCurrentPassword] = useState("")
-  const [newPassword, setNewPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
+  const {
+    formData,
+    handleChange,
+    isSubmitting,
+    error,
+    reset,
+    handleSubmit
+  } = useFormDialog({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  })
 
-  const handlePasswordChange = async (e: React.FormEvent) => {
+  const onPasswordChange = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsLoading(true)
-    // Password change implementation will go here
-    setTimeout(() => setIsLoading(false), 1000)
+    
+    await handleSubmit(async () => {
+      if (formData.newPassword !== formData.confirmPassword) {
+        throw new Error("New passwords do not match")
+      }
+      
+      await authApi.changePassword({
+        currentPassword: formData.currentPassword,
+        newPassword: formData.newPassword,
+      })
+      reset()
+    })
   }
 
   return (
@@ -34,42 +52,56 @@ export default function SecuritySettingsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handlePasswordChange} className="space-y-4">
+          <form onSubmit={onPasswordChange} className="space-y-4">
+            {error && (
+              <div className="bg-destructive/15 p-3 rounded-md text-sm text-destructive">
+                {error}
+              </div>
+            )}
+            
             <div className="space-y-2">
-              <Label htmlFor="current">Current Password</Label>
+              <Label htmlFor="currentPassword">Current Password</Label>
               <Input
-                id="current"
+                id="currentPassword"
+                name="currentPassword"
                 type="password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
+                value={formData.currentPassword}
+                onChange={handleChange}
                 placeholder="Enter current password"
+                required
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="new">New Password</Label>
+              <Label htmlFor="newPassword">New Password</Label>
               <Input
-                id="new"
+                id="newPassword"
+                name="newPassword"
                 type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
+                value={formData.newPassword}
+                onChange={handleChange}
                 placeholder="Enter new password"
+                required
+                minLength={8}
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="confirm">Confirm New Password</Label>
+              <Label htmlFor="confirmPassword">Confirm New Password</Label>
               <Input
-                id="confirm"
+                id="confirmPassword"
+                name="confirmPassword"
                 type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                value={formData.confirmPassword}
+                onChange={handleChange}
                 placeholder="Confirm new password"
+                required
+                minLength={8}
               />
             </div>
             
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Updating..." : "Update Password"}
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Updating..." : "Update Password"}
             </Button>
           </form>
         </CardContent>
@@ -125,4 +157,3 @@ export default function SecuritySettingsPage() {
     </div>
   )
 }
-

@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { organizationsApi } from "@/app/api/fetcher";
@@ -8,94 +7,60 @@ import { PageHeader } from "@/components/common/page-header";
 import { LoadingState, ErrorState } from "@/app/components/ui/state";
 import { EntityForm } from "@/app/components/forms/entity";
 import { DangerZone } from "@/app/components/settings/danger";
+import { useResourceDetail } from "@/app/hooks/use-resource-detail";
+import { useFormDialog } from "@/app/hooks/dialog";
+import { useMutation } from "@/app/hooks/api";
+import { useEffect } from "react";
 
 export default function OrganizationSettingsPage() {
   const router = useRouter();
   const params = useParams();
   const organizationId = params?.id as string;
   
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-  const [organization, setOrganization] = useState<any>(null);
-  const [formData, setFormData] = useState({
+  // DRY: Use hooks for data fetching
+  const { data: organization, isLoading, error } = useResourceDetail(
+    organizationsApi.get,
+    organizationId,
+    'organization'
+  );
+
+  // DRY: Use form dialog hook
+  const {
+    formData,
+    setFormData,
+    handleChange,
+    isSubmitting,
+    error: formError,
+    handleSubmit
+  } = useFormDialog({
     name: "",
     description: "",
   });
-  
+
+  // Update form when organization loads
   useEffect(() => {
-    const fetchData = async () => {
-      if (!organizationId) return;
-      
-      try {
-        setIsLoading(true);
-        setError("");
+    if (organization) {
+      setFormData({
+        name: organization.name || "",
+        description: organization.description || "",
+      });
+    }
+  }, [organization, setFormData]);
 
-        const orgResponse = await organizationsApi.get(organizationId);
-        const orgData = orgResponse.data?.organization || orgResponse.data;
-        
-        if (!orgData) {
-          setError("Organization not found");
-          setIsLoading(false);
-          return;
-        }
-        
-        setOrganization(orgData);
-        setFormData({
-          name: orgData.name || "",
-          description: orgData.description || "",
-        });
-      } catch (err) {
-        console.error("Error fetching organization:", err);
-        setError("Failed to load organization data");
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  // DRY: Use mutation hook for delete
+  const { mutate: deleteOrganization, isLoading: isDeleting } = useMutation(
+    organizationsApi.delete,
+    {
+      onSuccess: () => router.push("/organizations"),
+      onError: () => alert("Failed to delete organization. Please try again.")
+    }
+  );
 
-    fetchData();
-  }, [organizationId]);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSaving(true);
-    setError("");
-    setSuccess("");
-
-    try {
+    await handleSubmit(async () => {
       await organizationsApi.update(organizationId, formData);
-      setSuccess("Organization updated successfully");
-    } catch (err) {
-      setError("Failed to update organization");
-      console.error("Error updating organization:", err);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleDeleteOrganization = async () => {
-    if (!organizationId) return;
-    
-    try {
-      setIsDeleting(true);
-      await organizationsApi.delete(organizationId);
-      router.push("/organizations");
-    } catch (err) {
-      console.error("Error deleting organization:", err);
-      alert("Failed to delete organization. Please try again.");
-    } finally {
-      setIsDeleting(false);
-    }
+    });
   };
 
   if (isLoading) {
@@ -124,17 +89,16 @@ export default function OrganizationSettingsPage() {
           <EntityForm
             title="Organization Information"
             description="Update your organization details"
-            isLoading={isSaving}
-            error={error}
-            success={success}
-            onSubmit={handleSubmit}
+            isLoading={isSubmitting}
+            error={formError}
+            onSubmit={onSubmit}
             fields={[
               {
                 id: "name",
                 name: "name",
                 label: "Name",
                 value: formData.name,
-                onChange: handleInputChange,
+                onChange: handleChange,
                 placeholder: "Organization name",
                 required: true,
               },
@@ -143,7 +107,7 @@ export default function OrganizationSettingsPage() {
                 name: "description",
                 label: "Description (Optional)",
                 value: formData.description,
-                onChange: handleInputChange,
+                onChange: handleChange,
                 placeholder: "A brief description of your organization",
               },
             ]}
@@ -158,7 +122,7 @@ export default function OrganizationSettingsPage() {
               <DangerZone
                 actionText="Permanently delete this organization and all its data."
                 actionLabel="Delete Organization"
-                onAction={handleDeleteOrganization}
+                onAction={() => deleteOrganization({ params: organizationId })}
                 isLoading={isDeleting}
                 confirmationMessage="Are you sure you want to delete this organization? All projects in this organization will also be deleted. This action cannot be undone."
               />
@@ -168,4 +132,4 @@ export default function OrganizationSettingsPage() {
       </div>
     </div>
   );
-} 
+}

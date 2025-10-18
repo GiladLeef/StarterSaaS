@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,72 +9,38 @@ import { projectsApi, organizationsApi } from "@/app/api/fetcher";
 import { PageHeader } from "@/components/common/page-header";
 import { LoadingState, ErrorState } from "@/app/components/ui/state";
 import { DangerZone } from "@/app/components/settings/danger";
+import { useResourceDetail } from "@/app/hooks/use-resource-detail";
+import { useMutation } from "@/app/hooks/api";
+import { useState } from "react";
 
 export default function ProjectDetailsPage() {
   const router = useRouter();
   const params = useParams();
   const projectId = params?.id as string;
   
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [project, setProject] = useState<any>(null);
-  const [organization, setOrganization] = useState<any>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  // DRY: Use hooks for data fetching
+  const { data: project, isLoading, error, setData: setProject } = useResourceDetail(
+    projectsApi.get,
+    projectId,
+    'project'
+  );
 
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!projectId) return;
-      
-      try {
-        setIsLoading(true);
-        setError("");
+  const { data: organization } = useResourceDetail(
+    organizationsApi.get,
+    project?.organizationId || '',
+    'organization'
+  );
 
-        const projectResponse = await projectsApi.get(projectId);
-        const projectData = projectResponse.data?.project || projectResponse.data;
-        
-        if (!projectData) {
-          setError("Project not found");
-          setIsLoading(false);
-          return;
-        }
-        
-        setProject(projectData);
-
-        if (projectData?.organizationId) {
-          try {
-            const orgResponse = await organizationsApi.get(projectData.organizationId);
-            const organizationData = orgResponse.data?.organization || orgResponse.data;
-            setOrganization(organizationData);
-          } catch (orgErr) {
-            console.error("Error fetching organization:", orgErr);
-          }
-        }
-      } catch (err) {
-        console.error("Error fetching project:", err);
-        setError("Failed to load project data");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [projectId]);
-
-  const handleDeleteProject = async () => {
-    if (!project?.id) return;
-    
-    try {
-      setIsDeleting(true);
-      await projectsApi.delete(project.id);
-      router.push("/projects");
-    } catch (err) {
-      console.error("Error deleting project:", err);
-      alert("Failed to delete project. Please try again.");
-    } finally {
-      setIsDeleting(false);
+  // DRY: Use mutation hooks for actions
+  const { mutate: deleteProject, isLoading: isDeleting } = useMutation(
+    projectsApi.delete,
+    {
+      onSuccess: () => router.push("/projects"),
+      onError: () => alert("Failed to delete project. Please try again.")
     }
-  };
+  );
+
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
   const handleUpdateStatus = async (status: string) => {
     if (!project?.id) return;
@@ -83,9 +48,8 @@ export default function ProjectDetailsPage() {
     try {
       setIsUpdatingStatus(true);
       await projectsApi.update(project.id, { status });
-      setProject((prev: any) => ({ ...prev, status }));
+      setProject({ ...project, status });
     } catch (err) {
-      console.error("Error updating project status:", err);
       alert("Failed to update project status. Please try again.");
     } finally {
       setIsUpdatingStatus(false);
@@ -116,7 +80,7 @@ export default function ProjectDetailsPage() {
             <>
               <StatusBadge status={project.status || "inactive"} />
               <Button variant="outline" asChild>
-                <a href={`/projects/${project.id}/settings`}>Settings</a>
+                <Link href={`/projects/${project.id}/settings`}>Settings</Link>
               </Button>
             </>
           }
@@ -207,7 +171,7 @@ export default function ProjectDetailsPage() {
               <DangerZone 
                 actionText="Permanently delete this project."
                 actionLabel="Delete Project"
-                onAction={handleDeleteProject}
+                onAction={() => deleteProject({ params: project.id })}
                 isLoading={isDeleting}
               />
             </CardContent>
@@ -247,4 +211,4 @@ export default function ProjectDetailsPage() {
       </div>
     </div>
   );
-} 
+}

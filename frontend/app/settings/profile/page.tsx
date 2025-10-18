@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect } from "react"
 import { useAuth } from "@/app/providers/auth"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -8,14 +8,19 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { AvatarUpload } from "@/components/avatar-upload"
 import { userApi } from "@/app/api/fetcher"
+import { useFormDialog } from "@/app/hooks/dialog"
 
 export default function ProfileSettingsPage() {
   const { user, updateUser } = useAuth()
-  const [isLoading, setIsLoading] = useState(false)
-  const [success, setSuccess] = useState("")
-  const [error, setError] = useState("")
   
-  const [formData, setFormData] = useState({
+  const {
+    formData,
+    setFormData,
+    handleChange,
+    isSubmitting,
+    error,
+    handleSubmit
+  } = useFormDialog({
     firstName: "",
     lastName: "",
     email: "",
@@ -29,25 +34,12 @@ export default function ProfileSettingsPage() {
         email: user.email || "",
       })
     }
-  }, [user])
+  }, [user, setFormData])
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: value,
-    }))
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsLoading(true)
-    setError("")
-    setSuccess("")
-
-    try {
+    await handleSubmit(async () => {
       await userApi.updateProfile(formData)
-      setSuccess("Profile updated successfully")
       
       if (updateUser) {
         updateUser({
@@ -55,11 +47,7 @@ export default function ProfileSettingsPage() {
           ...formData
         })
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update profile")
-    } finally {
-      setIsLoading(false)
-    }
+    })
   }
 
   return (
@@ -96,18 +84,13 @@ export default function ProfileSettingsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {success && (
-            <div className="bg-green-100 p-3 rounded-md text-sm text-green-700 mb-4 dark:bg-green-900/20 dark:text-green-400">
-              {success}
-            </div>
-          )}
           {error && (
             <div className="bg-destructive/15 p-3 rounded-md text-sm text-destructive mb-4">
               {error}
             </div>
           )}
           
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={onSubmit} className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="firstName">First Name</Label>
@@ -115,7 +98,7 @@ export default function ProfileSettingsPage() {
                   id="firstName"
                   name="firstName"
                   value={formData.firstName}
-                  onChange={handleInputChange}
+                  onChange={handleChange}
                   placeholder="John"
                 />
               </div>
@@ -125,7 +108,7 @@ export default function ProfileSettingsPage() {
                   id="lastName"
                   name="lastName"
                   value={formData.lastName}
-                  onChange={handleInputChange}
+                  onChange={handleChange}
                   placeholder="Doe"
                 />
               </div>
@@ -138,7 +121,7 @@ export default function ProfileSettingsPage() {
                 name="email"
                 type="email"
                 value={formData.email}
-                onChange={handleInputChange}
+                onChange={handleChange}
                 placeholder="john@example.com"
               />
               <p className="text-xs text-muted-foreground">
@@ -146,8 +129,8 @@ export default function ProfileSettingsPage() {
               </p>
             </div>
             
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Saving..." : "Save Changes"}
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Saving..." : "Save Changes"}
             </Button>
           </form>
         </CardContent>
@@ -155,4 +138,3 @@ export default function ProfileSettingsPage() {
     </div>
   )
 }
-

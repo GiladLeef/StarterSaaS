@@ -1,7 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -9,117 +8,117 @@ import { Label } from "@/components/ui/label"
 import { authApi } from "@/app/api/fetcher"
 import { SplitAuthLayout } from "@/components/auth/split-auth-layout"
 import { AuthFormWrapper } from "@/components/auth/auth-form-wrapper"
+import { IconEye, IconEyeOff } from "@tabler/icons-react"
+import { useFormDialog } from "@/app/hooks/dialog"
+import { useState } from "react"
 
 export default function ResetPasswordPage() {
-  const router = useRouter()
   const searchParams = useSearchParams()
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState("")
-  const [success, setSuccess] = useState(false)
-  const [token, setToken] = useState("")
-  const [formData, setFormData] = useState({
+  const token = searchParams.get("token")
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+
+  const {
+    formData,
+    handleChange,
+    isSubmitting,
+    error,
+    handleSubmit
+  } = useFormDialog({
     password: "",
-    confirmPassword: "",
+    confirmPassword: ""
   })
 
-  useEffect(() => {
-    const tokenParam = searchParams.get("token")
-    if (tokenParam) {
-      setToken(tokenParam)
-    } else {
-      setError("Invalid or missing reset token")
-    }
-  }, [searchParams])
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError("")
-
-    // Validate password match
-    if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match")
-      return
-    }
-
-    if (!token) {
-      setError("Invalid reset token")
-      return
-    }
-
-    setIsLoading(true)
-
-    try {
-      await authApi.resetPassword(token, formData.password)
-      setSuccess(true)
+    
+    await handleSubmit(async () => {
+      if (formData.password !== formData.confirmPassword) {
+        throw new Error("Passwords do not match")
+      }
       
-      // Redirect to login after 3 seconds
-      setTimeout(() => {
-        router.push("/login")
-      }, 3000)
-    } catch (error) {
-      setError(error instanceof Error ? error.message : "Failed to reset password")
-    } finally {
-      setIsLoading(false)
-    }
+      if (!token) {
+        throw new Error("Reset token is missing")
+      }
+      
+      await authApi.resetPassword(token, formData.password)
+    })
   }
 
   return (
     <SplitAuthLayout
-      welcomeTitle="Welcome Back"
-      welcomeSubtitle="Create a new password to secure your account"
+      welcomeTitle="Create New Password"
+      welcomeSubtitle="Set a strong password to secure your account"
     >
       <AuthFormWrapper
         title="Reset password"
-        subtitle="Enter your new password"
+        subtitle="Enter your new password below"
         alternateText="Remember your password?"
         alternateLinkText="Sign in"
         alternateLink="/login"
       >
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={onSubmit} className="space-y-4">
           {error && (
             <div className="bg-destructive/15 p-3 rounded-md text-sm text-destructive">
               {error}
             </div>
           )}
           
-          {success ? (
-            <div className="bg-green-100 p-3 rounded-md text-sm text-green-800 dark:bg-green-900/20 dark:text-green-400">
-              Password has been reset successfully. Redirecting to login...
+          <div className="space-y-2">
+            <Label htmlFor="password">New Password</Label>
+            <div className="relative">
+              <Input
+                id="password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="Create a strong password"
+                value={formData.password}
+                onChange={handleChange}
+                required
+                minLength={8}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {showPassword ? <IconEyeOff size={18} /> : <IconEye size={18} />}
+              </button>
             </div>
-          ) : (
-            <>
-              <div className="space-y-2">
-                <Label htmlFor="password">New Password</Label>
-                <Input 
-                  id="password" 
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  type="password" 
-                  required 
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                <Input 
-                  id="confirmPassword" 
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  type="password" 
-                  required 
-                />
-              </div>
-              <Button className="w-full" type="submit" disabled={isLoading || !token}>
-                {isLoading ? "Resetting..." : "Reset Password"}
-              </Button>
-            </>
-          )}
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="confirmPassword">Confirm Password</Label>
+            <div className="relative">
+              <Input
+                id="confirmPassword"
+                name="confirmPassword"
+                type={showConfirmPassword ? "text" : "password"}
+                placeholder="Confirm your password"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                required
+                minLength={8}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {showConfirmPassword ? <IconEyeOff size={18} /> : <IconEye size={18} />}
+              </button>
+            </div>
+          </div>
+          
+          <Button type="submit" className="w-full" disabled={isSubmitting}>
+            {isSubmitting ? "Resetting password..." : "Reset password"}
+          </Button>
+          
+          <div className="text-center text-sm">
+            <Link href="/login" className="text-muted-foreground hover:text-primary transition-colors">
+              Back to sign in
+            </Link>
+          </div>
         </form>
       </AuthFormWrapper>
     </SplitAuthLayout>

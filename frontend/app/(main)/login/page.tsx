@@ -10,22 +10,25 @@ import { SplitAuthLayout } from "@/components/auth/split-auth-layout";
 import { AuthFormWrapper } from "@/components/auth/auth-form-wrapper";
 import { GoogleButton } from "@/components/auth/google-button";
 import { IconEye, IconEyeOff } from "@tabler/icons-react";
+import { useFormDialog } from "@/app/hooks/dialog";
 
 export default function LoginPage() {
   const { login, isLoading } = useAuth();
-  const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({
+  
+  // DRY: Use form dialog hook
+  const {
+    formData,
+    handleChange,
+    error,
+    setError,
+    handleSubmit
+  } = useFormDialog({
     email: "",
     password: "",
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
@@ -49,7 +52,7 @@ export default function LoginPage() {
         alternateLink="/register"
         alternateLinkText="Sign up"
       >
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={onSubmit} className="space-y-4">
           {error && (
             <div className="bg-destructive/15 p-3 rounded-md text-sm text-destructive">
               {error}
@@ -57,78 +60,66 @@ export default function LoginPage() {
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-sm font-medium text-black">
-              Email
-            </Label>
-            <Input 
-              id="email" 
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
               name="email"
+              type="email"
+              placeholder="name@example.com"
               value={formData.email}
               onChange={handleChange}
-              placeholder="Email" 
-              type="email" 
-              className="h-12"
-              required 
+              required
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password" className="text-sm font-medium text-black">
-              Password
-            </Label>
-            <div className="relative">
-              <Input 
-                id="password" 
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                type={showPassword ? "text" : "password"}
-                placeholder="Password"
-                className="h-12 pr-10"
-                required 
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-              >
-                {showPassword ? (
-                  <IconEyeOff className="w-5 h-5" />
-                ) : (
-                  <IconEye className="w-5 h-5" />
-                )}
-              </button>
-            </div>
-            <div className="flex justify-end">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="password">Password</Label>
               <Link
                 href="/forgot-password"
-                className="text-sm text-gray-600 hover:text-black underline-offset-4 hover:underline"
+                className="text-sm text-primary hover:underline"
               >
                 Forgot password?
               </Link>
             </div>
+            <div className="relative">
+              <Input
+                id="password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="Enter your password"
+                value={formData.password}
+                onChange={handleChange}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {showPassword ? <IconEyeOff size={18} /> : <IconEye size={18} />}
+              </button>
+            </div>
           </div>
 
-          <Button 
-            className="w-full h-12 bg-black text-white hover:bg-gray-800 rounded-md" 
-            type="submit" 
-            disabled={isLoading}
-          >
+          <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? "Signing in..." : "Sign in"}
           </Button>
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-gray-200"></span>
+              <span className="w-full border-t" />
             </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="bg-white px-2 text-gray-500">or</span>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">
+                Or continue with
+              </span>
             </div>
           </div>
 
-          <GoogleButton disabled={isLoading} />
+          <GoogleButton />
         </form>
       </AuthFormWrapper>
     </SplitAuthLayout>
   );
-} 
+}

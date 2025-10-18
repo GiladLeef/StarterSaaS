@@ -1,111 +1,72 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { projectsApi, organizationsApi } from "@/app/api/fetcher";
 import { PageHeader } from "@/components/common/page-header";
 import { LoadingState, ErrorState } from "@/app/components/ui/state";
 import { EntityForm } from "@/app/components/forms/entity";
 import { DangerZone } from "@/app/components/settings/danger";
 import { Label } from "@/components/ui/label";
+import { useResourceDetail } from "@/app/hooks/use-resource-detail";
+import { useFormDialog } from "@/app/hooks/dialog";
+import { useResourceList } from "@/app/hooks/resources";
+import { useMutation } from "@/app/hooks/api";
+import { useEffect } from "react";
 
 export default function ProjectSettingsPage() {
   const router = useRouter();
   const params = useParams();
   const projectId = params?.id as string;
   
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-  const [project, setProject] = useState<any>(null);
-  const [organizations, setOrganizations] = useState<any[]>([]);
-  const [formData, setFormData] = useState({
+  // DRY: Use hooks for data fetching
+  const { data: project, isLoading, error } = useResourceDetail(
+    projectsApi.get,
+    projectId,
+    'project'
+  );
+
+  const { items: organizations } = useResourceList(organizationsApi, 'organizations');
+
+  // DRY: Use form dialog hook
+  const {
+    formData,
+    setFormData,
+    handleChange,
+    isSubmitting,
+    error: formError,
+    handleSubmit
+  } = useFormDialog({
     name: "",
     description: "",
     status: "active",
   });
-  
+
+  // Update form when project loads
   useEffect(() => {
-    const fetchData = async () => {
-      if (!projectId) return;
-      
-      try {
-        setIsLoading(true);
-        setError("");
+    if (project) {
+      setFormData({
+        name: project.name || "",
+        description: project.description || "",
+        status: project.status || "active",
+      });
+    }
+  }, [project, setFormData]);
 
-        // Fetch project
-        const projectResponse = await projectsApi.get(projectId);
-        const projectData = projectResponse.data?.project || projectResponse.data;
-        
-        if (!projectData) {
-          setError("Project not found");
-          setIsLoading(false);
-          return;
-        }
-        
-        setProject(projectData);
-        setFormData({
-          name: projectData.name || "",
-          description: projectData.description || "",
-          status: projectData.status || "active",
-        });
+  // DRY: Use mutation hook for delete
+  const { mutate: deleteProject, isLoading: isDeleting } = useMutation(
+    projectsApi.delete,
+    {
+      onSuccess: () => router.push("/projects"),
+      onError: () => alert("Failed to delete project. Please try again.")
+    }
+  );
 
-        // Fetch organizations for context
-        const orgsResponse = await organizationsApi.list();
-        setOrganizations(orgsResponse.data?.organizations || []);
-      } catch (err) {
-        console.error("Error fetching project:", err);
-        setError("Failed to load project data");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [projectId]);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSaving(true);
-    setError("");
-    setSuccess("");
-
-    try {
+    await handleSubmit(async () => {
       await projectsApi.update(projectId, formData);
-      setSuccess("Project updated successfully");
-    } catch (err) {
-      setError("Failed to update project");
-      console.error("Error updating project:", err);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleDeleteProject = async () => {
-    if (!projectId) return;
-    
-    try {
-      setIsDeleting(true);
-      await projectsApi.delete(projectId);
-      router.push("/projects");
-    } catch (err) {
-      console.error("Error deleting project:", err);
-      alert("Failed to delete project. Please try again.");
-    } finally {
-      setIsDeleting(false);
-    }
+    });
   };
 
   if (isLoading) {
@@ -122,7 +83,6 @@ export default function ProjectSettingsPage() {
     );
   }
 
-  // Find organization name for display
   const organizationName = organizations.find(org => org.id === project?.organizationId)?.name || "Unknown";
 
   return (
@@ -137,17 +97,16 @@ export default function ProjectSettingsPage() {
           <EntityForm
             title="Project Information"
             description="Update your project details"
-            isLoading={isSaving}
-            error={error}
-            success={success}
-            onSubmit={handleSubmit}
+            isLoading={isSubmitting}
+            error={formError}
+            onSubmit={onSubmit}
             fields={[
               {
                 id: "name",
                 name: "name",
                 label: "Name",
                 value: formData.name,
-                onChange: handleInputChange,
+                onChange: handleChange,
                 placeholder: "Project name",
                 required: true,
               },
@@ -156,7 +115,7 @@ export default function ProjectSettingsPage() {
                 name: "description",
                 label: "Description (Optional)",
                 value: formData.description,
-                onChange: handleInputChange,
+                onChange: handleChange,
                 placeholder: "A brief description of your project",
               },
             ]}
@@ -167,7 +126,7 @@ export default function ProjectSettingsPage() {
                 id="status"
                 name="status"
                 value={formData.status}
-                onChange={handleInputChange}
+                onChange={handleChange}
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <option value="active">Active</option>
@@ -193,7 +152,7 @@ export default function ProjectSettingsPage() {
               <DangerZone
                 actionText="Permanently delete this project and all its data."
                 actionLabel="Delete Project"
-                onAction={handleDeleteProject}
+                onAction={() => deleteProject({ params: projectId })}
                 isLoading={isDeleting}
                 confirmationMessage="Are you sure you want to delete this project? This action cannot be undone."
               />
@@ -203,4 +162,4 @@ export default function ProjectSettingsPage() {
       </div>
     </div>
   );
-} 
+}

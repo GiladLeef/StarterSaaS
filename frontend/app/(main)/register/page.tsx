@@ -9,12 +9,20 @@ import { SplitAuthLayout } from "@/components/auth/split-auth-layout";
 import { AuthFormWrapper } from "@/components/auth/auth-form-wrapper";
 import { GoogleButton } from "@/components/auth/google-button";
 import { IconEye, IconEyeOff } from "@tabler/icons-react";
+import { useFormDialog } from "@/app/hooks/dialog";
 
 export default function RegisterPage() {
   const { register, isLoading } = useAuth();
-  const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({
+  
+  // DRY: Use form dialog hook
+  const {
+    formData,
+    handleChange,
+    error,
+    setError,
+    handleSubmit
+  } = useFormDialog({
     firstName: "",
     lastName: "",
     email: "",
@@ -22,12 +30,7 @@ export default function RegisterPage() {
     confirmPassword: "",
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
@@ -58,13 +61,13 @@ export default function RegisterPage() {
       highlightedWord="hours, not months"
     >
       <AuthFormWrapper
-        title="Welcome to StarterSaaS."
-        subtitle="Create your account."
+        title="Create your account"
+        subtitle="Get started with StarterSaaS"
         alternateText="Already have an account?"
         alternateLink="/login"
         alternateLinkText="Sign in"
       >
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={onSubmit} className="space-y-4">
           {error && (
             <div className="bg-destructive/15 p-3 rounded-md text-sm text-destructive">
               {error}
@@ -73,116 +76,111 @@ export default function RegisterPage() {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="firstName" className="text-sm font-medium text-black">
-                First name
-              </Label>
-              <Input 
-                id="firstName" 
+              <Label htmlFor="firstName">First Name</Label>
+              <Input
+                id="firstName"
                 name="firstName"
+                placeholder="John"
                 value={formData.firstName}
                 onChange={handleChange}
-                placeholder="John" 
-                className="h-12"
-                required 
+                required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="lastName" className="text-sm font-medium text-black">
-                Last name
-              </Label>
-              <Input 
-                id="lastName" 
+              <Label htmlFor="lastName">Last Name</Label>
+              <Input
+                id="lastName"
                 name="lastName"
+                placeholder="Doe"
                 value={formData.lastName}
                 onChange={handleChange}
-                placeholder="Doe" 
-                className="h-12"
-                required 
+                required
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-sm font-medium text-black">
-              Email
-            </Label>
-            <Input 
-              id="email" 
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
               name="email"
+              type="email"
+              placeholder="name@example.com"
               value={formData.email}
               onChange={handleChange}
-              placeholder="Email" 
-              type="email" 
-              className="h-12"
-              required 
+              required
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password" className="text-sm font-medium text-black">
-              Password
-            </Label>
+            <Label htmlFor="password">Password</Label>
             <div className="relative">
-              <Input 
-                id="password" 
+              <Input
+                id="password"
                 name="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="Create a strong password"
                 value={formData.password}
                 onChange={handleChange}
-                type={showPassword ? "text" : "password"}
-                placeholder="Password"
-                className="h-12 pr-10"
-                required 
+                required
+                minLength={8}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
               >
-                {showPassword ? (
-                  <IconEyeOff className="w-5 h-5" />
-                ) : (
-                  <IconEye className="w-5 h-5" />
-                )}
+                {showPassword ? <IconEyeOff size={18} /> : <IconEye size={18} />}
               </button>
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="confirmPassword" className="text-sm font-medium text-black">
-              Confirm Password
-            </Label>
-            <Input 
-              id="confirmPassword" 
-              name="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              type="password"
-              placeholder="Confirm Password"
-              className="h-12"
-              required 
-            />
+            <Label htmlFor="confirmPassword">Confirm Password</Label>
+            <div className="relative">
+              <Input
+                id="confirmPassword"
+                name="confirmPassword"
+                type={showPassword ? "text" : "password"}
+                placeholder="Confirm your password"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                required
+                minLength={8}
+              />
+            </div>
           </div>
 
-          <Button 
-            className="w-full h-12 bg-black text-white hover:bg-gray-800 rounded-md" 
-            type="submit" 
-            disabled={isLoading}
-          >
-            {isLoading ? "Creating account..." : "Sign up"}
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? "Creating account..." : "Create account"}
           </Button>
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-gray-200"></span>
+              <span className="w-full border-t" />
             </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="bg-white px-2 text-gray-500">or</span>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">
+                Or continue with
+              </span>
             </div>
           </div>
 
-          <GoogleButton disabled={isLoading} />
+          <GoogleButton />
+
+          <p className="text-xs text-center text-muted-foreground">
+            By creating an account, you agree to our{" "}
+            <a href="/terms" className="text-primary hover:underline">
+              Terms of Service
+            </a>{" "}
+            and{" "}
+            <a href="/privacy" className="text-primary hover:underline">
+              Privacy Policy
+            </a>
+            .
+          </p>
         </form>
       </AuthFormWrapper>
     </SplitAuthLayout>
   );
-} 
+}

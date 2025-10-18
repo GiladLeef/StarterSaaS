@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,60 +10,31 @@ import { organizationsApi, projectsApi } from "@/app/api/fetcher";
 import { formatRelativeTime } from "@/app/utils/dates";
 import { PageHeader } from "@/components/common/page-header";
 import { LoadingState, ErrorState } from "@/app/components/ui/state";
+import { useResourceDetail } from "@/app/hooks/use-resource-detail";
+import { useResourceList } from "@/app/hooks/resources";
 
 export default function OrganizationProjectsPage() {
   const router = useRouter();
   const params = useParams();
   const organizationId = params?.id as string;
   
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [organization, setOrganization] = useState<any>(null);
-  const [projects, setProjects] = useState<any[]>([]);
+  // DRY: Use hooks for data fetching
+  const { data: organization, isLoading: orgLoading, error: orgError } = useResourceDetail(
+    organizationsApi.get,
+    organizationId,
+    'organization'
+  );
 
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!organizationId) return;
-      
-      try {
-        setIsLoading(true);
-        setError("");
+  const { items: allProjects, isLoading: projectsLoading } = useResourceList(
+    projectsApi,
+    'projects'
+  );
 
-        const orgResponse = await organizationsApi.get(organizationId);
-        // The organization data is in orgResponse.data.organization or directly in data
-        const orgData = orgResponse.data?.organization || orgResponse.data;
-        
-        if (!orgData) {
-          setError("Organization not found");
-          setIsLoading(false);
-          return;
-        }
-        
-        setOrganization(orgData);
-
-        try {
-          const projectsResponse = await projectsApi.list();
-          const projectsData = projectsResponse.data?.projects || projectsResponse.data || [];
-          
-          const orgProjects = Array.isArray(projectsData) 
-            ? projectsData.filter((p: any) => p.organizationId === organizationId) 
-            : [];
-          
-          setProjects(orgProjects);
-        } catch (projErr) {
-          console.error("Error fetching projects:", projErr);
-          setError("Failed to load projects data");
-        }
-      } catch (err) {
-        console.error("Error fetching organization:", err);
-        setError("Failed to load organization data");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [organizationId, router]);
+  // Filter projects for this organization
+  const projects = allProjects.filter((p: any) => p.organizationId === organizationId);
+  
+  const isLoading = orgLoading || projectsLoading;
+  const error = orgError;
 
   if (isLoading) {
     return <LoadingState message="Loading organization projects..." />;
@@ -87,7 +57,7 @@ export default function OrganizationProjectsPage() {
           actions={
             <>
               <Button variant="outline" asChild>
-                <a href={`/organizations/${organization.id}`}>Organization Details</a>
+                <Link href={`/organizations/${organization.id}`}>Organization Details</Link>
               </Button>
               <Button onClick={() => router.push("/projects")}>
                 Create Project
@@ -115,7 +85,7 @@ export default function OrganizationProjectsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {projects.map((project) => (
+                  {projects.map((project: any) => (
                     <TableRow key={project.id}>
                       <TableCell className="font-medium">{project.name}</TableCell>
                       <TableCell>
@@ -142,4 +112,4 @@ export default function OrganizationProjectsPage() {
       </div>
     </div>
   );
-} 
+}

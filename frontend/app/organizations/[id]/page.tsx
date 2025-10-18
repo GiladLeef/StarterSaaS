@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,126 +13,119 @@ import { organizationsApi, projectsApi, invitationsApi } from "@/app/api/fetcher
 import { formatRelativeTime } from "@/app/utils/dates";
 import { PageHeader } from "@/components/common/page-header";
 import { LoadingState, ErrorState } from "@/app/components/ui/state";
+import { useResourceDetail } from "@/app/hooks/use-resource-detail";
+import { useResourceList } from "@/app/hooks/resources";
+import { useFormDialog } from "@/app/hooks/dialog";
 
 export default function OrganizationDetailsPage() {
   const router = useRouter();
   const params = useParams();
   const organizationId = params?.id as string;
   
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [organization, setOrganization] = useState<any>(null);
-  const [projects, setProjects] = useState<any[]>([]);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [isInviting, setIsInviting] = useState(false);
-  const [inviteSuccess, setInviteSuccess] = useState("");
-  const [inviteError, setInviteError] = useState("");
+  // DRY: Use hooks for data fetching
+  const { data: organization, isLoading: orgLoading, error: orgError } = useResourceDetail(
+    organizationsApi.get,
+    organizationId,
+    'organization'
+  );
 
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!organizationId) return;
-      
-      try {
-        setIsLoading(true);
-        setError("");
+  const { items: allProjects } = useResourceList(projectsApi, 'projects');
+  
+  // Filter projects for this organization
+  const projects = allProjects.filter((p: any) => p.organizationId === organizationId);
 
-        const orgResponse = await organizationsApi.get(organizationId);
-        // The organization data is in orgResponse.data.organization or directly in data
-        const orgData = orgResponse.data?.organization || orgResponse.data;
-        
-        if (!orgData) {
-          setError("Organization not found");
-          setIsLoading(false);
-          return;
-        }
-        
-        setOrganization(orgData);
-
-        try {
-          const projectsResponse = await projectsApi.list();
-          const projectsData = projectsResponse.data?.projects || projectsResponse.data || [];
-          
-          const orgProjects = Array.isArray(projectsData) 
-            ? projectsData.filter((p: any) => p.organizationId === organizationId) 
-            : [];
-          
-          setProjects(orgProjects);
-        } catch (projErr) {
-          console.error("Error fetching projects:", projErr);
-          // Continue even if projects fetch fails
-        }
-      } catch (err) {
-        console.error("Error fetching organization:", err);
-        setError("Failed to load organization data");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [organizationId]);
+  // DRY: Use form dialog for invite
+  const inviteDialog = useFormDialog({
+    email: "",
+  });
 
   const handleInviteMember = async () => {
-    if (!inviteEmail || !organizationId) return;
-    
-    try {
-      setIsInviting(true);
-      setInviteError("");
-      setInviteSuccess("");
-
+    await inviteDialog.handleSubmit(async () => {
+      if (!inviteDialog.formData.email || !organizationId) return;
+      
       await invitationsApi.create({
         organizationId,
-        email: inviteEmail
+        email: inviteDialog.formData.email,
       });
-
-      setInviteSuccess(`Invitation sent to ${inviteEmail}`);
-      setInviteEmail("");
-    } catch (err) {
-      console.error("Error inviting member:", err);
-      setInviteError(
-        err instanceof Error 
-          ? err.message 
-          : "Failed to send invitation. Please try again."
-      );
-    } finally {
-      setIsInviting(false);
-    }
+      
+      inviteDialog.reset();
+    });
   };
+
+  const isLoading = orgLoading;
+  const error = orgError;
 
   if (isLoading) {
     return <LoadingState message="Loading organization..." />;
   }
 
-  if (error || !organization) {
-    return (
-      <ErrorState 
-        message={error || "Organization not found"} 
-        actionLabel="Return to Organizations" 
-        onAction={() => router.push("/organizations")} 
-      />
-    );
+  if (error) {
+    return <ErrorState message={error} />;
+  }
+
+  if (!organization) {
+    return <ErrorState message="Organization not found" />;
   }
 
   return (
     <div className="flex min-h-screen w-full flex-col">
       <div className="container flex flex-col gap-6 py-8">
-        <PageHeader 
+        <PageHeader
           title={organization.name}
           description={organization.description || "No description provided"}
           actions={
             <>
-              <Button variant="outline" asChild>
-                <a href={`/organizations/${organization.id}/settings`}>Settings</a>
-              </Button>
-              <Button onClick={() => router.push("/projects")}>
-                Create Project
+              <Dialog open={inviteDialog.isOpen} onOpenChange={inviteDialog.setIsOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline">Invite Member</Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Invite Team Member</DialogTitle>
+                    <DialogDescription>
+                      Send an invitation to join {organization.name}
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  {inviteDialog.error && (
+                    <div className="bg-destructive/15 p-3 rounded-md text-sm text-destructive">
+                      {inviteDialog.error}
+                    </div>
+                  )}
+
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email address</Label>
+                      <Input
+                        id="email"
+                        name="email"
+                        type="email"
+                        placeholder="colleague@example.com"
+                        value={inviteDialog.formData.email}
+                        onChange={inviteDialog.handleChange}
+                      />
+                    </div>
+                  </div>
+
+                  <DialogFooter>
+                    <Button
+                      type="button"
+                      onClick={handleInviteMember}
+                      disabled={inviteDialog.isSubmitting || !inviteDialog.formData.email}
+                    >
+                      {inviteDialog.isSubmitting ? "Sending..." : "Send Invitation"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+              <Button asChild>
+                <Link href={`/organizations/${organization.id}/settings`}>Settings</Link>
               </Button>
             </>
           }
         />
 
-        <div className="grid gap-6 md:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2">
           <Card>
             <CardHeader>
               <CardTitle>Organization Details</CardTitle>
@@ -146,87 +138,40 @@ export default function OrganizationDetailsPage() {
                 </div>
                 <div>
                   <dt className="text-sm font-medium text-muted-foreground">Slug</dt>
-                  <dd>{organization.slug}</dd>
+                  <dd className="font-mono text-sm">{organization.slug}</dd>
                 </div>
+                {organization.description && (
+                  <div>
+                    <dt className="text-sm font-medium text-muted-foreground">Description</dt>
+                    <dd>{organization.description}</dd>
+                  </div>
+                )}
                 <div>
                   <dt className="text-sm font-medium text-muted-foreground">Created</dt>
                   <dd>{new Date(organization.createdAt).toLocaleDateString()}</dd>
-                </div>
-                <div>
-                  <dt className="text-sm font-medium text-muted-foreground">Members</dt>
-                  <dd>{organization.memberCount || 1}</dd>
                 </div>
               </dl>
             </CardContent>
           </Card>
 
-          <Card className="md:col-span-2">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>Organization Stats</CardTitle>
-                <CardDescription>Overview of organization activity</CardDescription>
-              </div>
-              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button size="sm">Invite Member</Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Invite Member</DialogTitle>
-                    <DialogDescription>
-                      Invite a new member to join this organization by email
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4 py-4">
-                    {inviteSuccess && (
-                      <div className="bg-green-100 p-3 rounded-md text-sm text-green-700">
-                        {inviteSuccess}
-                      </div>
-                    )}
-                    {inviteError && (
-                      <div className="bg-destructive/15 p-3 rounded-md text-sm text-destructive">
-                        {inviteError}
-                      </div>
-                    )}
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email Address</Label>
-                      <Input 
-                        id="email"
-                        type="email"
-                        value={inviteEmail}
-                        onChange={(e) => setInviteEmail(e.target.value)}
-                        placeholder="colleague@example.com" 
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        The email must be registered on the platform for the invitation to be accepted.
-                      </p>
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button 
-                      type="submit"
-                      onClick={handleInviteMember}
-                      disabled={isInviting || !inviteEmail}
-                    >
-                      {isInviting ? "Sending..." : "Send Invitation"}
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+          <Card>
+            <CardHeader>
+              <CardTitle>Statistics</CardTitle>
+              <CardDescription>Organization overview</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-muted-foreground">Total Projects</p>
-                  <p className="text-3xl font-bold">{projects.length}</p>
+              <dl className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <dt className="text-sm font-medium text-muted-foreground">Projects</dt>
+                  <dd className="text-2xl font-bold">{projects.length}</dd>
                 </div>
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-muted-foreground">Active Projects</p>
-                  <p className="text-3xl font-bold">
-                    {projects.filter(p => p.status?.toLowerCase() === 'active').length}
-                  </p>
+                <div className="flex items-center justify-between">
+                  <dt className="text-sm font-medium text-muted-foreground">Active Projects</dt>
+                  <dd className="text-2xl font-bold">
+                    {projects.filter((p: any) => p.status === 'active').length}
+                  </dd>
                 </div>
-              </div>
+              </dl>
             </CardContent>
           </Card>
         </div>
@@ -234,23 +179,21 @@ export default function OrganizationDetailsPage() {
         <Card>
           <CardHeader>
             <CardTitle>Projects</CardTitle>
-            <CardDescription>
-              Projects in this organization
-            </CardDescription>
+            <CardDescription>Projects in this organization</CardDescription>
           </CardHeader>
           <CardContent>
             {projects.length > 0 ? (
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Project</TableHead>
+                    <TableHead>Name</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Created</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {projects.map((project) => (
+                  {projects.map((project: any) => (
                     <TableRow key={project.id}>
                       <TableCell className="font-medium">{project.name}</TableCell>
                       <TableCell>
@@ -268,8 +211,10 @@ export default function OrganizationDetailsPage() {
               </Table>
             ) : (
               <div className="text-center py-6">
-                <p className="text-muted-foreground mb-4">No projects found for this organization.</p>
-                <Button onClick={() => router.push("/projects")}>Create a Project</Button>
+                <p className="text-muted-foreground mb-4">No projects yet</p>
+                <Button onClick={() => router.push('/projects')}>
+                  Create a Project
+                </Button>
               </div>
             )}
           </CardContent>
@@ -277,4 +222,4 @@ export default function OrganizationDetailsPage() {
       </div>
     </div>
   );
-} 
+}

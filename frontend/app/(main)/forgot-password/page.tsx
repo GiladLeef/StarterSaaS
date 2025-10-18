@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -8,27 +7,24 @@ import { Label } from "@/components/ui/label"
 import { authApi } from "@/app/api/fetcher"
 import { SplitAuthLayout } from "@/components/auth/split-auth-layout"
 import { AuthFormWrapper } from "@/components/auth/auth-form-wrapper"
+import { useFormDialog } from "@/app/hooks/dialog"
 
 export default function ForgotPasswordPage() {
-  const [isLoading, setIsLoading] = useState(false)
-  const [email, setEmail] = useState("")
-  const [error, setError] = useState("")
-  const [success, setSuccess] = useState(false)
+  const {
+    formData,
+    handleChange,
+    isSubmitting,
+    error,
+    handleSubmit
+  } = useFormDialog({
+    email: ""
+  })
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError("")
-    setSuccess(false)
-    setIsLoading(true)
-
-    try {
-      await authApi.forgotPassword(email)
-      setSuccess(true)
-    } catch (error) {
-      setError(error instanceof Error ? error.message : "Failed to process request")
-    } finally {
-      setIsLoading(false)
-    }
+    await handleSubmit(async () => {
+      await authApi.forgotPassword(formData.email)
+    })
   }
 
   return (
@@ -43,35 +39,35 @@ export default function ForgotPasswordPage() {
         alternateLinkText="Sign in"
         alternateLink="/login"
       >
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={onSubmit} className="space-y-4">
           {error && (
             <div className="bg-destructive/15 p-3 rounded-md text-sm text-destructive">
               {error}
             </div>
           )}
           
-          {success ? (
-            <div className="bg-green-100 p-3 rounded-md text-sm text-green-800 dark:bg-green-900/20 dark:text-green-400">
-              Check your email for a reset link. If you don't see it, check your spam folder.
-            </div>
-          ) : (
-            <>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input 
-                  id="email" 
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@example.com" 
-                  type="email" 
-                  required 
-                />
-              </div>
-              <Button className="w-full" type="submit" disabled={isLoading}>
-                {isLoading ? "Sending..." : "Send reset link"}
-              </Button>
-            </>
-          )}
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              placeholder="name@example.com"
+              value={formData.email}
+              onChange={handleChange}
+              required
+            />
+          </div>
+          
+          <Button type="submit" className="w-full" disabled={isSubmitting}>
+            {isSubmitting ? "Sending reset link..." : "Send reset link"}
+          </Button>
+          
+          <div className="text-center text-sm">
+            <Link href="/login" className="text-muted-foreground hover:text-primary transition-colors">
+              Back to sign in
+            </Link>
+          </div>
         </form>
       </AuthFormWrapper>
     </SplitAuthLayout>
