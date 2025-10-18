@@ -16,7 +16,7 @@ export function DashboardHeader({ title, action }: DashboardHeaderProps) {
           orientation="vertical"
           className="mx-2 data-[orientation=vertical]:h-4"
         />
-        <h1 className="text-base font-medium">{title}</h1>
+        <h1 className="text-xl font-serif font-medium">{title}</h1>
         {action && <div className="ml-auto flex items-center gap-2">{action}</div>}
       </div>
     </header>

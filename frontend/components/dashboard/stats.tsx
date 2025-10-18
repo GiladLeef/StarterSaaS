@@ -29,7 +29,7 @@ export function DashboardStats({ stats }: DashboardStatsProps) {
         <Card key={index} className="@container/card">
           <CardHeader>
             <CardDescription>{stat.title}</CardDescription>
-            <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+            <CardTitle className="text-3xl font-serif font-semibold tabular-nums @[250px]/card:text-4xl">
               {stat.value}
             </CardTitle>
             <CardAction>

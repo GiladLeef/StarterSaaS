@@ -6,6 +6,7 @@ import { useAuth } from '../providers/auth'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { NavigationWithMegaMenu } from '@/components/landing/megamenu'
+import { ScrollSection } from '@/components/landing/scroll-section'
 import { 
   IconArrowRight, 
   IconSparkles, 
@@ -116,7 +117,8 @@ export default function HomePage() {
       {/* Features Section - DARK */}
       <section className="w-full bg-black text-white px-6 py-16">
         <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-8">
+          <ScrollSection>
+            <div className="grid lg:grid-cols-2 gap-8">
             {/* Feature 1 */}
             <div className="border border-white/10 rounded-2xl p-8 hover:border-white/20 transition-colors">
               <Badge className="bg-purple-600/20 text-purple-400 border-purple-600/30 mb-6">
@@ -211,22 +213,26 @@ export default function HomePage() {
               </div>
             </div>
           </div>
+          </ScrollSection>
         </div>
       </section>
 
       {/* Use Cases Section - WHITE */}
       <section className="w-full bg-white px-6 py-24">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-serif mb-6 text-black">
-              Built for every team
-            </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              From startups to enterprises, our platform adapts to your workflow
-            </p>
-          </div>
+          <ScrollSection>
+            <div className="text-center mb-16">
+              <h2 className="text-4xl md:text-5xl font-serif mb-6 text-black">
+                Built for every team
+              </h2>
+              <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+                From startups to enterprises, our platform adapts to your workflow
+              </p>
+            </div>
+          </ScrollSection>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <ScrollSection delay={100}>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[
               {
                 icon: <IconRocket className="w-6 h-6" />,
@@ -277,6 +283,7 @@ export default function HomePage() {
               </div>
             ))}
           </div>
+          </ScrollSection>
         </div>
       </section>
 
@@ -460,38 +467,78 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* CTA Section - DARK */}
+      {/* CTA Section - DARK with side content like screenshot */}
       <section className="w-full bg-black text-white px-6 py-32">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-5xl md:text-6xl font-serif mb-8 leading-tight">
-            Ready to get started?
-          </h2>
-          <p className="text-xl text-gray-400 mb-12 leading-relaxed">
-            Join thousands of teams already using our platform to build better products faster.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Button 
-              size="lg" 
-              className="bg-white text-black hover:bg-gray-200 rounded-full px-8 h-14 text-base"
-              asChild
-            >
-              <a href="/register">
-                Start Free Trial
-                <IconArrowRight className="ml-2 w-5 h-5" />
-              </a>
-            </Button>
-            <Button 
-              size="lg" 
-              variant="outline" 
-              className="border-white/20 text-white hover:bg-white/10 rounded-full px-8 h-14 text-base"
-              asChild
-            >
-              <a href="/login">Talk to Sales</a>
-            </Button>
+        <div className="max-w-7xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+            {/* Left: Main CTA */}
+            <div>
+              <h2 className="text-5xl md:text-6xl font-serif mb-8 leading-tight">
+                Try Pearl for free
+              </h2>
+              <Button 
+                size="lg" 
+                className="bg-white text-black hover:bg-gray-200 rounded px-8 h-14 text-base"
+                asChild
+              >
+                <a href="/register">
+                  Get started - It's free
+                  <IconArrowRight className="ml-2 w-5 h-5" />
+                </a>
+              </Button>
+            </div>
+
+            {/* Right: Info boxes */}
+            <div className="space-y-8">
+              {/* Built for Trust */}
+              <div>
+                <h3 className="text-2xl font-serif mb-4">Built for Trust, Engineered for Security</h3>
+                <div className="flex items-center gap-3 mb-2">
+                  <span className="text-sm text-gray-400">We are</span>
+                  <span className="px-3 py-1 bg-blue-600 text-white text-xs font-semibold rounded">SOC II</span>
+                  <span className="px-3 py-1 bg-blue-600 text-white text-xs font-semibold rounded">HIPAA</span>
+                  <span className="px-3 py-1 bg-blue-600 text-white text-xs font-semibold rounded">GDPR</span>
+                  <span className="text-sm text-gray-400">compliant.</span>
+                </div>
+              </div>
+
+              {/* Book a Demo */}
+              <div className="border-t border-white/10 pt-8">
+                <h3 className="text-xl font-semibold mb-3">Book a Demo</h3>
+                <p className="text-gray-400 mb-4">
+                  Interested in seeing Pearl in action? Schedule a personalized demo with our team.
+                </p>
+                <Button 
+                  variant="outline" 
+                  className="border-white/20 text-white hover:bg-white/10 rounded"
+                  asChild
+                >
+                  <a href="#demo">
+                    Schedule a Demo
+                    <IconArrowRight className="ml-2 w-4 h-4" />
+                  </a>
+                </Button>
+              </div>
+
+              {/* View Pricing */}
+              <div className="border-t border-white/10 pt-8">
+                <h3 className="text-xl font-semibold mb-3">View Pricing</h3>
+                <p className="text-gray-400 mb-4">
+                  Explore our flexible pricing plans and find the perfect fit for your business.
+                </p>
+                <Button 
+                  variant="outline" 
+                  className="border-white/20 text-white hover:bg-white/10 rounded"
+                  asChild
+                >
+                  <a href="#pricing">
+                    Pricing
+                    <IconArrowRight className="ml-2 w-4 h-4" />
+                  </a>
+                </Button>
+              </div>
+            </div>
           </div>
-          <p className="text-sm text-gray-500 mt-8">
-            No credit card required • 14-day free trial • Cancel anytime
-          </p>
         </div>
       </section>
 
