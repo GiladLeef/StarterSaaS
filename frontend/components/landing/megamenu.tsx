@@ -28,8 +28,8 @@ export function MegaMenu({ onClose, menuType = 'Product' }: MegaMenuProps) {
                   description="Connect with 100+ tools and services. RESTful & GraphQL APIs included."
                   buttonText="View all integrations →"
                   buttonHref="/integrations"
-                  gradientFrom="purple"
-                  gradientTo="purple"
+                  gradientFrom="indigo"
+                  gradientTo="indigo"
                 />
                 <FeatureBlock
                   icon="🚀"
@@ -56,8 +56,8 @@ export function MegaMenu({ onClose, menuType = 'Product' }: MegaMenuProps) {
                   icon="📖"
                   title="Documentation"
                   description="Complete guides, tutorials, and API reference to get you started."
-                  gradientFrom="green"
-                  gradientTo="green"
+                  gradientFrom="violet"
+                  gradientTo="violet"
                 />
               </div>
             </div>
@@ -77,15 +77,15 @@ export function MegaMenu({ onClose, menuType = 'Product' }: MegaMenuProps) {
                   description="Tutorials, videos, guides, and real-world use cases to master the platform."
                   buttonText="Start learning →"
                   buttonHref="/learn"
-                  gradientFrom="orange"
-                  gradientTo="orange"
+                  gradientFrom="purple"
+                  gradientTo="purple"
                 />
                 <FeatureBlock
                   icon="📚"
                   title="eBooks & Guides"
                   description="In-depth resources and best practices from industry experts."
-                  gradientFrom="pink"
-                  gradientTo="pink"
+                  gradientFrom="indigo"
+                  gradientTo="indigo"
                 />
               </div>
             </div>
@@ -97,8 +97,8 @@ export function MegaMenu({ onClose, menuType = 'Product' }: MegaMenuProps) {
                   description="Connect with 10K+ developers on Discord. Events, webinars & meetups."
                   buttonText="Join now →"
                   buttonHref="/community"
-                  gradientFrom="indigo"
-                  gradientTo="indigo"
+                  gradientFrom="blue"
+                  gradientTo="blue"
                 />
                 <FeatureBlock
                   icon="🏆"
@@ -123,15 +123,15 @@ export function MegaMenu({ onClose, menuType = 'Product' }: MegaMenuProps) {
                   description="12 open positions. Join our remote-first team with great benefits."
                   buttonText="View openings →"
                   buttonHref="/careers"
-                  gradientFrom="purple"
-                  gradientTo="purple"
+                  gradientFrom="indigo"
+                  gradientTo="indigo"
                 />
                 <FeatureBlock
                   icon="🌟"
                   title="Life at Company"
                   description="Diversity, inclusion, and employee stories from around the world."
-                  gradientFrom="lime"
-                  gradientTo="lime"
+                  gradientFrom="purple"
+                  gradientTo="purple"
                 />
               </div>
             </div>
@@ -151,8 +151,8 @@ export function MegaMenu({ onClose, menuType = 'Product' }: MegaMenuProps) {
                   icon="📰"
                   title="Press & Media"
                   description="Latest news, press releases, and media kit downloads."
-                  gradientFrom="blue"
-                  gradientTo="blue"
+                  gradientFrom="violet"
+                  gradientTo="violet"
                 />
               </div>
             </div>
