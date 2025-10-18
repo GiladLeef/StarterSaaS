@@ -7,17 +7,14 @@ import (
 	"github.com/google/uuid"
 )
 
-type CreateSubscriptionRequest struct{}
 type UpdateSubscriptionRequest struct{}
 
-var Subscription = utils.SimpleCrud[models.Subscription, CreateSubscriptionRequest, UpdateSubscriptionRequest]("subscription")
-
-func CreateSubscription(req *CreateSubscriptionRequest, userID uuid.UUID) *models.Subscription {
-	return &models.Subscription{}
+func preventDirectSubscriptionCreation(req *interface{}, userID uuid.UUID) *models.Subscription {
+	panic("Subscriptions must be created through Stripe checkout flow - use POST /api/v1/billing/checkout")
 }
 
-var SubscriptionHandlers = utils.Crud[models.Subscription, CreateSubscriptionRequest, UpdateSubscriptionRequest](
+var SubscriptionHandlers = utils.Crud[models.Subscription, interface{}, UpdateSubscriptionRequest](
 	"subscription",
-	CreateSubscription,
+	preventDirectSubscriptionCreation,
 )
 

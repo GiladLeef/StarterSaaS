@@ -29,13 +29,21 @@ export const megaMenuData = {
     { title: "Case Studies", href: "#" },
     { title: "Blog", href: "#" },
     { title: "Community", href: "#" }
+  ],
+  company: [
+    { title: "About Us", href: "/company" },
+    { title: "Careers", href: "/careers" },
+    { title: "Contact", href: "/contact" },
+    { title: "Blog", href: "#" },
+    { title: "Press Kit", href: "#" }
   ]
 }
 
 export const navigationItems = [
-  { label: 'Product', hasMenu: true },
-  { label: 'Features', hasMenu: false },
-  { label: 'Pricing', hasMenu: false },
-  { label: 'Company', hasMenu: false }
+  { label: 'Product', hasMenu: true, href: '#' },
+  { label: 'Solutions', hasMenu: true, href: '#' },
+  { label: 'Pricing', hasMenu: false, href: '/pricing' },
+  { label: 'Resources', hasMenu: true, href: '#' },
+  { label: 'Company', hasMenu: true, href: '#' }
 ]
 

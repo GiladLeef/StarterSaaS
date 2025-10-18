@@ -1,20 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-
-const apiFetch = async (url: string, options?: { method?: string; body?: any }) => {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}${url}`, {
-    method: options?.method || 'GET',
-    headers: {
-      'Authorization': token ? `Bearer ${token}` : '',
-      'Content-Type': 'application/json'
-    },
-    body: options?.body ? JSON.stringify(options.body) : undefined,
-  })
-  if (!res.ok) throw new Error('Failed to fetch')
-  return res.json()
-}
+import { apiFetch } from "@/app/api/fetcher"
 
 interface UseResourceOptions {
   endpoint: string

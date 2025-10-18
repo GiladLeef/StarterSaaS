@@ -1,15 +1,18 @@
 package resources
 
 import (
+	"encoding/json"
 	"errors"
 	"io"
 	"platform/backend/config"
 	"platform/backend/db"
 	"platform/backend/models"
 	"platform/backend/utils"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/stripe/stripe-go/v81"
 	"gorm.io/gorm"
 )
 
@@ -19,7 +22,6 @@ func init() {
 	stripeService = utils.NewStripeService()
 }
 
-// CreateCheckoutSession creates a Stripe checkout session for subscription
 func CreateCheckoutSession(c *gin.Context) {
 	utils.H(c, func() {
 		userID := utils.RequireAuth(c)
@@ -68,7 +70,6 @@ func CreateCheckoutSession(c *gin.Context) {
 	})
 }
 
-// HandleStripeWebhook handles Stripe webhook events
 func HandleStripeWebhook(c *gin.Context) {
 	utils.H(c, func() {
 		payload := utils.Try(io.ReadAll(c.Request.Body))
@@ -94,43 +95,140 @@ func HandleStripeWebhook(c *gin.Context) {
 	})
 }
 
-// Helper functions for webhook handlers
-func handleCheckoutCompleted(event interface{}) {
-	// TODO: Update subscription in database
-	// Extract metadata and create/update subscription record
+func handleCheckoutCompleted(event stripe.Event) {
+	var session stripe.CheckoutSession
+	if err := json.Unmarshal(event.Data.Raw, &session); err != nil {
+		return
+	}
+
+	metadata := session.Metadata
+	if metadata == nil {
+		return
+	}
+
+	orgID, err := uuid.Parse(metadata["organization_id"])
+	if err != nil {
+		return
+	}
+
+	planName := metadata["plan_name"]
+	billingPeriod := metadata["billing_period"]
+
+	billingService := &utils.BillingService{}
+	subscription, err := billingService.CreateSubscription(orgID, planName, billingPeriod)
+	if err != nil {
+		return
+	}
+
+	subscription.StripeSubscriptionID = session.Subscription.ID
+	subscription.StripeCustomerID = session.Customer.ID
+
+	db.DB.Create(subscription)
 }
 
-func handleSubscriptionUpdated(event interface{}) {
-	// TODO: Update subscription status in database
+func handleSubscriptionUpdated(event stripe.Event) {
+	var sub stripe.Subscription
+	if err := json.Unmarshal(event.Data.Raw, &sub); err != nil {
+		return
+	}
+
+	var dbSub models.Subscription
+	if err := db.DB.Where("stripe_subscription_id = ?", sub.ID).First(&dbSub).Error; err != nil {
+		return
+	}
+
+	dbSub.Status = string(sub.Status)
+	if sub.CurrentPeriodEnd > 0 {
+		dbSub.EndDate = time.Unix(sub.CurrentPeriodEnd, 0)
+	}
+
+	db.DB.Save(&dbSub)
 }
 
-func handleSubscriptionDeleted(event interface{}) {
-	// TODO: Mark subscription as cancelled in database
+func handleSubscriptionDeleted(event stripe.Event) {
+	var sub stripe.Subscription
+	if err := json.Unmarshal(event.Data.Raw, &sub); err != nil {
+		return
+	}
+
+	var dbSub models.Subscription
+	if err := db.DB.Where("stripe_subscription_id = ?", sub.ID).First(&dbSub).Error; err != nil {
+		return
+	}
+
+	dbSub.Status = config.StatusCancelled
+	db.DB.Save(&dbSub)
 }
 
-func handlePaymentSucceeded(event interface{}) {
-	// TODO: Record successful payment
+func handlePaymentSucceeded(event stripe.Event) {
+	var invoice stripe.Invoice
+	if err := json.Unmarshal(event.Data.Raw, &invoice); err != nil {
+		return
+	}
+
+	if invoice.Subscription == nil {
+		return
+	}
+
+	var dbSub models.Subscription
+	if err := db.DB.Where("stripe_subscription_id = ?", invoice.Subscription.ID).First(&dbSub).Error; err != nil {
+		return
+	}
+
+	dbSub.Status = config.StatusActive
+	if invoice.PeriodEnd > 0 {
+		dbSub.EndDate = time.Unix(invoice.PeriodEnd, 0)
+	}
+
+	db.DB.Save(&dbSub)
 }
 
-func handlePaymentFailed(event interface{}) {
-	// TODO: Handle failed payment, notify user
+func handlePaymentFailed(event stripe.Event) {
+	var invoice stripe.Invoice
+	if err := json.Unmarshal(event.Data.Raw, &invoice); err != nil {
+		return
+	}
+
+	if invoice.Subscription == nil {
+		return
+	}
+
+	var dbSub models.Subscription
+	if err := db.DB.Where("stripe_subscription_id = ?", invoice.Subscription.ID).First(&dbSub).Error; err != nil {
+		return
+	}
+
+	dbSub.Status = "past_due"
+	db.DB.Save(&dbSub)
+
+	user := models.User{}
+	db.DB.Joins("JOIN organization_memberships ON organization_memberships.user_id = users.id").
+		Where("organization_memberships.organization_id = ?", dbSub.OrganizationID).
+		First(&user)
+
+	if user.Email != "" {
+		utils.SendPaymentFailedEmail(user.Email, dbSub.PlanName)
+	}
 }
 
-// CancelSubscription cancels a user's subscription
 func CancelSubscription(c *gin.Context) {
 	utils.H(c, func() {
 		userID := utils.RequireAuth(c)
 		subscriptionID := c.Param("id")
 
-	// Get subscription from database
-	subID := utils.Try(uuid.Parse(subscriptionID))
-	sub := utils.Try(utils.ByID[models.Subscription](subID))
+		subID := utils.Try(uuid.Parse(subscriptionID))
+		sub := utils.Try(utils.ByID[models.Subscription](subID))
 
-		// Check ownership through organization
 		utils.Check(utils.CheckOwnership(sub.OrganizationID, userID))
 
-		// Cancel in Stripe (if it has a Stripe subscription ID)
-		// For now, just update status in database
+		if sub.StripeSubscriptionID != "" {
+			_, err := stripeService.CancelSubscription(sub.StripeSubscriptionID)
+			if err != nil {
+				utils.Respond(c, utils.StatusBadRequest, "Failed to cancel subscription in Stripe", nil)
+				return
+			}
+		}
+
 		sub.Status = config.StatusCancelled
 		utils.TryErr(utils.HandleCRUD(c, "update", &sub, "subscription"))
 
@@ -152,17 +250,15 @@ func GetSubscriptionStatus(c *gin.Context) {
 		orgID := utils.Try(uuid.Parse(organizationID))
 		utils.Check(utils.CheckOwnership(orgID, userID))
 
-	// Get active subscription for organization
-	var sub models.Subscription
-	err := db.DB.Where("organization_id = ?", orgID).First(&sub).Error
-	
-	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		utils.Respond(c, 500, "Failed to query subscription", nil)
-		return
-	}
-	
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-			// No subscription found, return free plan
+		var sub models.Subscription
+		err := db.DB.Where("organization_id = ?", orgID).First(&sub).Error
+		
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			utils.Respond(c, 500, "Failed to query subscription", nil)
+			return
+		}
+		
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			utils.Respond(c, utils.StatusOK, "", gin.H{
 				"plan":          config.PlanFree,
 				"status":        config.StatusActive,
@@ -179,6 +275,37 @@ func GetSubscriptionStatus(c *gin.Context) {
 			"billingPeriod": sub.BillingPeriod,
 			"startDate":     sub.StartDate,
 			"endDate":       sub.EndDate,
+			"stripeCustomerId": sub.StripeCustomerID,
+		})
+	})
+}
+
+func GetCustomerPortal(c *gin.Context) {
+	utils.H(c, func() {
+		userID := utils.RequireAuth(c)
+		organizationID := c.Query("organizationId")
+
+		if organizationID == "" {
+			utils.Respond(c, utils.StatusBadRequest, "Organization ID is required", nil)
+			return
+		}
+
+		orgID := utils.Try(uuid.Parse(organizationID))
+		utils.Check(utils.CheckOwnership(orgID, userID))
+
+		var sub models.Subscription
+		err := db.DB.Where("organization_id = ?", orgID).First(&sub).Error
+		
+		if err != nil || sub.StripeCustomerID == "" {
+			utils.Respond(c, utils.StatusBadRequest, "No active subscription found", nil)
+			return
+		}
+
+		returnURL := c.Request.Header.Get("Origin") + "/billing"
+		portalURL := utils.Try(stripeService.CreatePortalSession(sub.StripeCustomerID, returnURL))
+
+		utils.Respond(c, utils.StatusOK, "", gin.H{
+			"url": portalURL,
 		})
 	})
 }

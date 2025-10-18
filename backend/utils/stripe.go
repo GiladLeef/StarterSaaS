@@ -6,6 +6,7 @@ import (
 	"platform/backend/config"
 
 	"github.com/stripe/stripe-go/v81"
+	portalSession "github.com/stripe/stripe-go/v81/billingportal/session"
 	"github.com/stripe/stripe-go/v81/checkout/session"
 	"github.com/stripe/stripe-go/v81/customer"
 	"github.com/stripe/stripe-go/v81/subscription"
@@ -175,9 +176,16 @@ func (ss *StripeService) CreatePortalSession(customerID string, returnURL string
 		return "", errors.New("customer ID is required")
 	}
 
-	// Note: This requires the stripe-go portal package
-	// For now, return a placeholder URL
-	// In production, you'd use: portal.session.New()
-	return returnURL + "?portal=true", nil
+	params := &stripe.BillingPortalSessionParams{
+		Customer:  stripe.String(customerID),
+		ReturnURL: stripe.String(returnURL),
+	}
+
+	session, err := portalSession.New(params)
+	if err != nil {
+		return "", err
+	}
+
+	return session.URL, nil
 }
 

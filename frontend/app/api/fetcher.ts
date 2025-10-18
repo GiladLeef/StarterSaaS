@@ -247,31 +247,14 @@ export const organizationsApi = createCrudApi<any>('/api/v1/organizations', 'org
 
 /**
  * Organization Invitations API functions
+ * Uses createCrudApi for standard operations, extended with custom actions
  */
+const baseInvitationsApi = createCrudApi<any>('/api/v1/invitations', 'invitation');
+
 export const invitationsApi = {
-  list: async () => {
-    try {
-      const response = await apiFetch<{ invitations: any[] }>('/api/v1/invitations');
-      return response;
-    } catch (error) {
-      handleApiError('list invitations', error);
-      throw error;
-    }
-  },
-
-  create: async (data: { organizationId: string, email: string }) => {
-    try {
-      const response = await apiFetch<{ invitation: any }>('/api/v1/invitations', {
-        method: 'POST',
-        body: data,
-      });
-      return response;
-    } catch (error) {
-      handleApiError('create invitation', error);
-      throw error;
-    }
-  },
-
+  ...baseInvitationsApi,
+  
+  // Custom action: accept invitation
   accept: async (id: string) => {
     try {
       const response = await apiFetch(`/api/v1/invitations/${id}/accept`, {
@@ -284,6 +267,7 @@ export const invitationsApi = {
     }
   },
 
+  // Custom action: decline invitation
   decline: async (id: string) => {
     try {
       const response = await apiFetch(`/api/v1/invitations/${id}/decline`, {

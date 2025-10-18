@@ -6,18 +6,7 @@ import { DashboardStats } from "@/components/dashboard/stats"
 import { DashboardLoading, DashboardError } from "@/components/dashboard/loading"
 import { AdminResources } from "@/components/admin-resources"
 import { useAdminData } from "@/hooks/use-admin"
-
-const apiFetch = async (url: string) => {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}${url}`, {
-    headers: {
-      'Authorization': token ? `Bearer ${token}` : '',
-      'Content-Type': 'application/json'
-    },
-  })
-  if (!res.ok) throw new Error('Failed to fetch')
-  return res.json()
-}
+import { apiFetch } from "@/app/api/fetcher"
 
 export default function AdminDashboard() {
   const { user, resourcesArray, isLoading, error } = useAdminData()

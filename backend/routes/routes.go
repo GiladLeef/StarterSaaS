@@ -4,6 +4,7 @@ import (
 	"platform/backend/controllers"
 	"platform/backend/middleware"
 	"platform/backend/resources"
+	"platform/backend/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -32,40 +33,34 @@ func SetupRoutes(r *gin.Engine) {
 				users.DELETE("/me", resources.DeleteCurrentUser)
 			}
 
-			orgs := protected.Group("/organizations")
-			{
-				orgs.GET("", resources.ListOrganizations)
-				orgs.POST("", resources.OrganizationHandlers["create"])
-				
-				orgs.GET("/:id", middleware.RequireOrganizationAccess(), resources.OrganizationHandlers["get"])
-				orgs.PUT("/:id", middleware.RequireOrganizationAccess(), resources.OrganizationHandlers["update"])
-				orgs.DELETE("/:id", middleware.RequireOrganizationAccess(), resources.OrganizationHandlers["delete"])
-			}
-
-			projects := protected.Group("/projects")
-			{
-				projects.GET("", resources.ListProjects)
-				projects.POST("", resources.ProjectHandlers["create"])
-				
-				projects.GET("/:id", middleware.RequireProjectAccess(), resources.ProjectHandlers["get"])
-				projects.PUT("/:id", middleware.RequireProjectAccess(), resources.ProjectHandlers["update"])
-				projects.DELETE("/:id", middleware.RequireProjectAccess(), resources.ProjectHandlers["delete"])
-			}
-
-		subscriptions := protected.Group("/subscriptions")
+		orgs := protected.Group("/organizations")
 		{
-			subscriptions.GET("", resources.SubscriptionHandlers["list"])
-			subscriptions.GET("/:id", resources.SubscriptionHandlers["get"])
+			orgs.GET("", resources.ListOrganizations)
+			orgs.POST("", resources.OrganizationHandlers["create"])
+			orgs.GET("/:id", middleware.RequireOrganizationAccess(), resources.OrganizationHandlers["get"])
+			orgs.PUT("/:id", middleware.RequireOrganizationAccess(), resources.OrganizationHandlers["update"])
+			orgs.DELETE("/:id", middleware.RequireOrganizationAccess(), resources.OrganizationHandlers["delete"])
 		}
+
+		projects := protected.Group("/projects")
+		{
+			projects.GET("", resources.ListProjects)
+			projects.POST("", resources.ProjectHandlers["create"])
+			projects.GET("/:id", middleware.RequireProjectAccess(), resources.ProjectHandlers["get"])
+			projects.PUT("/:id", middleware.RequireProjectAccess(), resources.ProjectHandlers["update"])
+			projects.DELETE("/:id", middleware.RequireProjectAccess(), resources.ProjectHandlers["delete"])
+		}
+
+		utils.Route(protected, "/subscriptions", resources.SubscriptionHandlers)
 
 		billing := protected.Group("/billing")
 		{
 			billing.POST("/checkout", resources.CreateCheckoutSession)
 			billing.GET("/subscription/status", resources.GetSubscriptionStatus)
+			billing.GET("/portal", resources.GetCustomerPortal)
 			billing.DELETE("/subscription/:id", resources.CancelSubscription)
 		}
 		
-		// Stripe webhook (no auth required)
 		v1.POST("/billing/webhook", resources.HandleStripeWebhook)
 
 		invitations := protected.Group("/invitations")

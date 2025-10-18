@@ -115,9 +115,15 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
   }
   body {
     @apply bg-background text-foreground;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-serif), serif;
+  }
+  .font-sans {
     font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
   }
   .font-serif {

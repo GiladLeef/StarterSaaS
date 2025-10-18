@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -15,33 +16,35 @@ type CreateInvitationRequest struct {
 	OrganizationID fields.OrganizationID
 }
 
-func CreateInvitation(c *gin.Context) {
-	utils.H(c, func() {
-		req := utils.Get(utils.BindAndValidate[CreateInvitationRequest](c))
-		orgID := utils.Get(utils.GetUUID(c, req.OrganizationID.Value))
-		userID := utils.RequireAuth(c)
-		
-		utils.Check(utils.Try(utils.CheckOrganizationMembership(userID, orgID)))
-		
-		userToInvite, userErr := utils.ByEmail[models.User](req.Email.Value)
-		if userErr == nil {
-			utils.Check(!utils.Try(utils.CheckOrganizationMembership(userToInvite.ID, orgID)))
-		}
-		
-		utils.Check(!utils.HasPendingInvitation(orgID, req.Email.Value))
-		
-		invitation := models.OrganizationInvitation{
-			Email:          req.Email.Value,
-			OrganizationID: orgID,
-			InviterID:      userID,
-			Status:         "pending",
-			ExpiresAt:      time.Now().Add(7 * 24 * time.Hour),
-		}
+type UpdateInvitationRequest struct{}
 
-		utils.TryErr(utils.HandleCRUD(c, "create", &invitation, "invitation"))
-		utils.CrudSuccess(c, "create", "invitation", invitation)
-	})
+func createInvitationFactory(req *CreateInvitationRequest, userID uuid.UUID) *models.OrganizationInvitation {
+	orgID := utils.Try(uuid.Parse(req.OrganizationID.Value))
+	
+	utils.Check(utils.Try(utils.CheckOrganizationMembership(userID, orgID)))
+	
+	userToInvite, userErr := utils.ByEmail[models.User](req.Email.Value)
+	if userErr == nil {
+		utils.Check(!utils.Try(utils.CheckOrganizationMembership(userToInvite.ID, orgID)))
+	}
+	
+	utils.Check(!utils.HasPendingInvitation(orgID, req.Email.Value))
+	
+	return &models.OrganizationInvitation{
+		Email:          req.Email.Value,
+		OrganizationID: orgID,
+		InviterID:      userID,
+		Status:         "pending",
+		ExpiresAt:      time.Now().Add(7 * 24 * time.Hour),
+	}
 }
+
+var InvitationHandlers = utils.Crud[models.OrganizationInvitation, CreateInvitationRequest, UpdateInvitationRequest](
+	"invitation",
+	createInvitationFactory,
+)
+
+var CreateInvitation = InvitationHandlers["create"]
 
 func ListUserInvitations(c *gin.Context) {
 	utils.H(c, func() {
