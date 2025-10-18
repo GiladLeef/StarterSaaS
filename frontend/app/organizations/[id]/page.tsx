@@ -27,7 +27,7 @@ export default function OrganizationDetailsPage() {
     organizationsApi.get,
     organizationId,
     'organization'
-  );
+  ) as { data: any; isLoading: boolean; error: string };
 
   const { items: allProjects } = useResourceList(projectsApi, 'projects');
   
@@ -67,12 +67,15 @@ export default function OrganizationDetailsPage() {
     return <ErrorState message="Organization not found" />;
   }
 
+  // Type assertion for TypeScript
+  const org = organization as any;
+
   return (
     <div className="flex min-h-screen w-full flex-col">
       <div className="container flex flex-col gap-6 py-8">
         <PageHeader
-          title={organization.name}
-          description={organization.description || "No description provided"}
+          title={org.name}
+          description={org.description || "No description provided"}
           actions={
             <>
               <Dialog open={inviteDialog.isOpen} onOpenChange={inviteDialog.setIsOpen}>
@@ -83,7 +86,7 @@ export default function OrganizationDetailsPage() {
                   <DialogHeader>
                     <DialogTitle>Invite Team Member</DialogTitle>
                     <DialogDescription>
-                      Send an invitation to join {organization.name}
+                      Send an invitation to join {org.name}
                     </DialogDescription>
                   </DialogHeader>
 
@@ -119,7 +122,7 @@ export default function OrganizationDetailsPage() {
                 </DialogContent>
               </Dialog>
               <Button asChild>
-                <Link href={`/organizations/${organization.id}/settings`}>Settings</Link>
+                <Link href={`/organizations/${org.id}/settings`}>Settings</Link>
               </Button>
             </>
           }
@@ -134,21 +137,21 @@ export default function OrganizationDetailsPage() {
               <dl className="space-y-4">
                 <div>
                   <dt className="text-sm font-medium text-muted-foreground">Name</dt>
-                  <dd>{organization.name}</dd>
+                  <dd>{org.name}</dd>
                 </div>
                 <div>
                   <dt className="text-sm font-medium text-muted-foreground">Slug</dt>
-                  <dd className="font-mono text-sm">{organization.slug}</dd>
+                  <dd className="font-mono text-sm">{org.slug}</dd>
                 </div>
-                {organization.description && (
+                {org.description && (
                   <div>
                     <dt className="text-sm font-medium text-muted-foreground">Description</dt>
-                    <dd>{organization.description}</dd>
+                    <dd>{org.description}</dd>
                   </div>
                 )}
                 <div>
                   <dt className="text-sm font-medium text-muted-foreground">Created</dt>
-                  <dd>{new Date(organization.createdAt).toLocaleDateString()}</dd>
+                  <dd>{new Date(org.createdAt).toLocaleDateString()}</dd>
                 </div>
               </dl>
             </CardContent>

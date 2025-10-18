@@ -164,6 +164,13 @@ export const authApi = {
       auth: false,
     }),
 
+  changePassword: (data: { currentPassword: string; newPassword: string }) => 
+    apiFetch<{ message: string }>('/api/v1/users/me/password', {
+      method: 'PUT',
+      body: data,
+      auth: true,
+    }),
+
   getCurrentUser: async () => {
     try {
       const response = await apiFetch<{ user: any }>('/api/v1/users/me');

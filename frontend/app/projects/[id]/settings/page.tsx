@@ -24,7 +24,7 @@ export default function ProjectSettingsPage() {
     projectsApi.get,
     projectId,
     'project'
-  );
+  ) as { data: any; isLoading: boolean; error: string };
 
   const { items: organizations } = useResourceList(organizationsApi, 'organizations');
 
@@ -45,10 +45,11 @@ export default function ProjectSettingsPage() {
   // Update form when project loads
   useEffect(() => {
     if (project) {
+      const proj = project as any;
       setFormData({
-        name: project.name || "",
-        description: project.description || "",
-        status: project.status || "active",
+        name: proj.name || "",
+        description: proj.description || "",
+        status: proj.status || "active",
       });
     }
   }, [project, setFormData]);
@@ -83,7 +84,8 @@ export default function ProjectSettingsPage() {
     );
   }
 
-  const organizationName = organizations.find(org => org.id === project?.organizationId)?.name || "Unknown";
+  const foundOrg = organizations.find((org: any) => org.id === project?.organizationId) as any;
+  const organizationName = foundOrg?.name || "Unknown";
 
   return (
     <div className="flex min-h-screen w-full flex-col">
@@ -152,7 +154,7 @@ export default function ProjectSettingsPage() {
               <DangerZone
                 actionText="Permanently delete this project and all its data."
                 actionLabel="Delete Project"
-                onAction={() => deleteProject({ params: projectId })}
+                onAction={() => deleteProject(projectId)}
                 isLoading={isDeleting}
                 confirmationMessage="Are you sure you want to delete this project? This action cannot be undone."
               />

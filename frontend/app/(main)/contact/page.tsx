@@ -65,8 +65,8 @@ export default function ContactPage() {
 
   return (
     <SplitAuthLayout
-      title="Contact Us"
-      subtitle="Get in touch with our team"
+      welcomeTitle="Get in Touch"
+      welcomeSubtitle="We'd love to hear from you. Reach out anytime."
     >
       <div className="max-w-6xl mx-auto px-4 py-12">
         <div className="text-center mb-12">

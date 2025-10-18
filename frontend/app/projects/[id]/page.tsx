@@ -23,13 +23,13 @@ export default function ProjectDetailsPage() {
     projectsApi.get,
     projectId,
     'project'
-  );
+  ) as { data: any; isLoading: boolean; error: string; setData: any };
 
   const { data: organization } = useResourceDetail(
     organizationsApi.get,
     project?.organizationId || '',
     'organization'
-  );
+  ) as { data: any };
 
   // DRY: Use mutation hooks for actions
   const { mutate: deleteProject, isLoading: isDeleting } = useMutation(
@@ -171,7 +171,7 @@ export default function ProjectDetailsPage() {
               <DangerZone 
                 actionText="Permanently delete this project."
                 actionLabel="Delete Project"
-                onAction={() => deleteProject({ params: project.id })}
+                onAction={() => deleteProject(project.id)}
                 isLoading={isDeleting}
               />
             </CardContent>

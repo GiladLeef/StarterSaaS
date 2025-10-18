@@ -48,16 +48,19 @@ export default function OrganizationProjectsPage() {
     return <ErrorState message="Organization not found" />;
   }
 
+  // Type assertion for TypeScript
+  const org = organization as any;
+
   return (
     <div className="flex min-h-screen w-full flex-col">
       <div className="container flex flex-col gap-6 py-8">
         <PageHeader
-          title={`${organization.name} - Projects`}
-          description={`Manage projects for ${organization.name}`}
+          title={`${org.name} - Projects`}
+          description={`Manage projects for ${org.name}`}
           actions={
             <>
               <Button variant="outline" asChild>
-                <Link href={`/organizations/${organization.id}`}>Organization Details</Link>
+                <Link href={`/organizations/${org.id}`}>Organization Details</Link>
               </Button>
               <Button onClick={() => router.push("/projects")}>
                 Create Project
@@ -70,7 +73,7 @@ export default function OrganizationProjectsPage() {
           <CardHeader>
             <CardTitle>Projects</CardTitle>
             <CardDescription>
-              Projects in {organization.name}
+              Projects in {org.name}
             </CardDescription>
           </CardHeader>
           <CardContent>

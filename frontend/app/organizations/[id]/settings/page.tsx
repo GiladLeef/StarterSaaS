@@ -22,7 +22,7 @@ export default function OrganizationSettingsPage() {
     organizationsApi.get,
     organizationId,
     'organization'
-  );
+  ) as { data: any; isLoading: boolean; error: string };
 
   // DRY: Use form dialog hook
   const {
@@ -40,9 +40,10 @@ export default function OrganizationSettingsPage() {
   // Update form when organization loads
   useEffect(() => {
     if (organization) {
+      const org = organization as any;
       setFormData({
-        name: organization.name || "",
-        description: organization.description || "",
+        name: org.name || "",
+        description: org.description || "",
       });
     }
   }, [organization, setFormData]);
@@ -122,7 +123,7 @@ export default function OrganizationSettingsPage() {
               <DangerZone
                 actionText="Permanently delete this organization and all its data."
                 actionLabel="Delete Organization"
-                onAction={() => deleteOrganization({ params: organizationId })}
+                onAction={() => deleteOrganization(organizationId)}
                 isLoading={isDeleting}
                 confirmationMessage="Are you sure you want to delete this organization? All projects in this organization will also be deleted. This action cannot be undone."
               />
