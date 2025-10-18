@@ -1,16 +1,19 @@
 "use client";
 
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { useAuth } from "@/app/providers/auth";
+import { SplitAuthLayout } from "@/components/auth/split-auth-layout";
+import { AuthFormWrapper } from "@/components/auth/auth-form-wrapper";
+import { GoogleButton } from "@/components/auth/google-button";
+import { IconEye, IconEyeOff } from "@tabler/icons-react";
 
 export default function RegisterPage() {
   const { register, isLoading } = useAuth();
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -49,112 +52,137 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4 py-12">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
-          <CardDescription>
-            Enter your information to create your account
-          </CardDescription>
-        </CardHeader>
-        <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
-            {error && (
-              <div className="bg-destructive/15 p-3 rounded-md text-sm text-destructive">
-                {error}
-              </div>
-            )}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">First name</Label>
-                <Input 
-                  id="firstName" 
-                  name="firstName"
-                  value={formData.firstName}
-                  onChange={handleChange}
-                  placeholder="John" 
-                  required 
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="lastName">Last name</Label>
-                <Input 
-                  id="lastName" 
-                  name="lastName"
-                  value={formData.lastName}
-                  onChange={handleChange}
-                  placeholder="Doe" 
-                  required 
-                />
-              </div>
+    <SplitAuthLayout 
+      welcomeTitle="Start building amazing products."
+      welcomeSubtitle="Join thousands of developers launching their SaaS in hours, not months."
+      highlightedWord="hours, not months"
+    >
+      <AuthFormWrapper
+        title="Welcome to StarterSaaS."
+        subtitle="Create your account."
+        alternateText="Already have an account?"
+        alternateLink="/login"
+        alternateLinkText="Sign in"
+      >
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {error && (
+            <div className="bg-destructive/15 p-3 rounded-md text-sm text-destructive">
+              {error}
             </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="firstName" className="text-sm font-medium text-black">
+                First name
+              </Label>
               <Input 
-                id="email" 
-                name="email"
-                value={formData.email}
+                id="firstName" 
+                name="firstName"
+                value={formData.firstName}
                 onChange={handleChange}
-                placeholder="name@example.com" 
-                type="email" 
+                placeholder="John" 
+                className="h-12"
                 required 
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="lastName" className="text-sm font-medium text-black">
+                Last name
+              </Label>
+              <Input 
+                id="lastName" 
+                name="lastName"
+                value={formData.lastName}
+                onChange={handleChange}
+                placeholder="Doe" 
+                className="h-12"
+                required 
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="email" className="text-sm font-medium text-black">
+              Email
+            </Label>
+            <Input 
+              id="email" 
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              placeholder="Email" 
+              type="email" 
+              className="h-12"
+              required 
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="password" className="text-sm font-medium text-black">
+              Password
+            </Label>
+            <div className="relative">
               <Input 
                 id="password" 
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                type="password" 
+                type={showPassword ? "text" : "password"}
+                placeholder="Password"
+                className="h-12 pr-10"
                 required 
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+              >
+                {showPassword ? (
+                  <IconEyeOff className="w-5 h-5" />
+                ) : (
+                  <IconEye className="w-5 h-5" />
+                )}
+              </button>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
-              <Input 
-                id="confirmPassword" 
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                type="password" 
-                required 
-              />
-            </div>
-            <Button className="w-full" type="submit" disabled={isLoading}>
-              {isLoading ? "Creating account..." : "Create account"}
-            </Button>
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t"></span>
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <Button variant="outline" className="w-full" type="button">
-                Google
-              </Button>
-              <Button variant="outline" className="w-full" type="button">
-                GitHub
-              </Button>
-            </div>
-          </CardContent>
-        </form>
-        <CardFooter className="flex flex-col items-center gap-2">
-          <div className="text-sm text-muted-foreground">
-            Already have an account?{" "}
-            <Link
-              href="/login"
-              className="text-primary font-medium underline-offset-4 hover:underline"
-            >
-              Sign in
-            </Link>
           </div>
-        </CardFooter>
-      </Card>
-    </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="confirmPassword" className="text-sm font-medium text-black">
+              Confirm Password
+            </Label>
+            <Input 
+              id="confirmPassword" 
+              name="confirmPassword"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              type="password"
+              placeholder="Confirm Password"
+              className="h-12"
+              required 
+            />
+          </div>
+
+          <Button 
+            className="w-full h-12 bg-black text-white hover:bg-gray-800 rounded-md" 
+            type="submit" 
+            disabled={isLoading}
+          >
+            {isLoading ? "Creating account..." : "Sign up"}
+          </Button>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-gray-200"></span>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="bg-white px-2 text-gray-500">or</span>
+            </div>
+          </div>
+
+          <GoogleButton disabled={isLoading} />
+        </form>
+      </AuthFormWrapper>
+    </SplitAuthLayout>
   );
 } 

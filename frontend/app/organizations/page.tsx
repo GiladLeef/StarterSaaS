@@ -12,6 +12,9 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/providers/auth";
 import { useEffect } from "react";
 import { UserDashboardLayout } from "@/components/dashboard/user";
+import { PageHeader } from "@/components/common/page-header";
+import { ListSection } from "@/components/common/list-section";
+import { formatCount } from "@/lib/utils/resource-helpers";
 
 interface Organization {
   id: string;
@@ -102,33 +105,38 @@ export default function OrganizationsPage() {
         </div>
       )}
 
-      <div className="flex flex-col gap-4 mb-6">
-        <CreateDialog
-          title="Create Organization"
-          description="Add a new organization to collaborate with your team."
-          triggerText="Create Organization"
-          fields={[
-            {
-              name: "name",
-              label: "Organization Name",
-              placeholder: "Acme Inc.",
-              required: true,
-            },
-            {
-              name: "description",
-              label: "Description",
-              placeholder: "A brief description of your organization",
-            },
-          ]}
-          isOpen={dialog.isOpen}
-          onOpenChange={dialog.setIsOpen}
-          formData={dialog.formData}
-          onChange={handleNameChange}
-          onSubmit={handleCreate}
-          isSubmitting={dialog.isSubmitting}
-          error={dialog.error}
+      <div className="flex flex-col gap-6">
+        <PageHeader
+          title="Organizations"
+          description="Manage your organizations and team collaborations."
+          action={
+            <CreateDialog
+              title="Create Organization"
+              description="Add a new organization to collaborate with your team."
+              triggerText="Create Organization"
+              fields={[
+                {
+                  name: "name",
+                  label: "Organization Name",
+                  placeholder: "Acme Inc.",
+                  required: true,
+                },
+                {
+                  name: "description",
+                  label: "Description",
+                  placeholder: "A brief description of your organization",
+                },
+              ]}
+              isOpen={dialog.isOpen}
+              onOpenChange={dialog.setIsOpen}
+              formData={dialog.formData}
+              onChange={handleNameChange}
+              onSubmit={handleCreate}
+              isSubmitting={dialog.isSubmitting}
+              error={dialog.error}
+            />
+          }
         />
-      </div>
 
       {organizations.length > 0 ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -137,8 +145,7 @@ export default function OrganizationsPage() {
               <CardHeader>
                 <CardTitle>{org.name}</CardTitle>
                 <CardDescription>
-                  {org.projectCount || 0} {(org.projectCount || 0) === 1 ? "project" : "projects"} •{" "}
-                  {org.memberCount || 0} {(org.memberCount || 0) === 1 ? "member" : "members"}
+                  {formatCount(org.projectCount || 0, 'project')} • {formatCount(org.memberCount || 0, 'member')}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -172,38 +179,28 @@ export default function OrganizationsPage() {
       )}
 
       {invitations.length > 0 && (
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>Organization Invitations</CardTitle>
-            <CardDescription>Organizations you've been invited to join.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {invitations.map((invitation) => (
-                <div key={invitation.id} className="flex items-center justify-between rounded-lg border p-4">
-                  <div>
-                    <h3 className="font-medium">{invitation.organization.name}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Invited by: {invitation.inviter.email}
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDeclineInvitation(invitation.id)}
-                    >
-                      Decline
-                    </Button>
-                    <Button size="sm" onClick={() => handleAcceptInvitation(invitation.id)}>
-                      Accept
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        <ListSection
+          title="Organization Invitations"
+          description="Organizations you've been invited to join."
+          items={invitations.map((invitation) => ({
+            id: invitation.id,
+            primary: invitation.organization.name,
+            secondary: `Invited by: ${invitation.inviter.email}`,
+            actions: [
+              {
+                label: 'Decline',
+                onClick: () => handleDeclineInvitation(invitation.id),
+                variant: 'outline' as const
+              },
+              {
+                label: 'Accept',
+                onClick: () => handleAcceptInvitation(invitation.id),
+                variant: 'default' as const
+              }
+            ]
+          }))}
+          className="mt-6"
+        />
       )}
     </div>
   );

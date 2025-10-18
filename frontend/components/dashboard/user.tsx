@@ -4,15 +4,7 @@ import React from "react"
 import { DashboardLayout } from "./layout"
 import { DashboardSidebar } from "./sidebar"
 import { DashboardHeader } from "./header"
-import {
-  IconDashboard,
-  IconBuilding,
-  IconFolder,
-  IconUser,
-  IconSettings,
-  IconHelp,
-  IconInnerShadowTop,
-} from "@tabler/icons-react"
+import { dashboardNav, dashboardConfig, formatUserForSidebar } from "@/lib/data/dashboard-config"
 
 interface UserDashboardLayoutProps {
   user: any
@@ -26,25 +18,13 @@ export function UserDashboardLayout({ user, title, action, children }: UserDashb
     <DashboardLayout
       sidebar={
         <DashboardSidebar
-          title="Platform"
-          titleUrl="/dashboard"
-          icon={<IconInnerShadowTop className="!size-5" />}
-          user={{
-            name: user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : "User",
-            email: user?.email || "user@example.com",
-            avatar: "/avatars/user.jpg",
-          }}
-          navMain={[
-            { title: "Dashboard", url: "/dashboard", icon: IconDashboard },
-            { title: "Organizations", url: "/organizations", icon: IconBuilding },
-            { title: "Projects", url: "/projects", icon: IconFolder },
-            { title: "Profile", url: "/profile", icon: IconUser },
-          ]}
-          navSecondary={[
-            { title: "Settings", url: "/settings", icon: IconSettings },
-            { title: "Help", url: "/help", icon: IconHelp },
-          ]}
-          variant="inset"
+          title={dashboardConfig.title}
+          titleUrl={dashboardConfig.titleUrl}
+          icon={dashboardConfig.icon}
+          user={formatUserForSidebar(user)}
+          navMain={dashboardNav.main}
+          navSecondary={dashboardNav.secondary}
+          variant={dashboardConfig.variant}
         />
       }
       header={<DashboardHeader title={title} action={action} />}

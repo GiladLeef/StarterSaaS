@@ -16,6 +16,9 @@ import { useStatusCounts, useGroupByOrg } from "@/app/hooks/auto";
 import { useAuth } from "@/app/providers/auth";
 import { useEffect } from "react";
 import { UserDashboardLayout } from "@/components/dashboard/user";
+import { PageHeader } from "@/components/common/page-header";
+import { InfoCard } from "@/components/common/info-card";
+import { calculateStatusCounts, groupByOrganization, formatCount } from "@/lib/utils/resource-helpers";
 
 interface Organization {
   id: string;
@@ -86,8 +89,8 @@ export default function ProjectsPage() {
     return <LoadingPage message="Loading projects..." />;
   }
 
-  const statusCounts = useStatusCounts(projects);
-  const projectsByOrg = useGroupByOrg(projects, organizations);
+  const statusCounts = calculateStatusCounts(projects);
+  const projectsByOrg = groupByOrganization(projects, organizations);
 
   const content = (
     <div className="px-4 lg:px-6">
@@ -98,48 +101,47 @@ export default function ProjectsPage() {
           </div>
         )}
 
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="space-y-1">
-            <h2 className="text-2xl font-bold tracking-tight">Projects</h2>
-            <p className="text-muted-foreground">Manage your projects across all organizations.</p>
-          </div>
-
-          <CreateDialog
-            title="Create Project"
-            description="Add a new project to one of your organizations."
-            triggerText="Create Project"
-            fields={[
-              {
-                name: "name",
-                label: "Project Name",
-                placeholder: "New Website",
-                required: true,
-              },
-              {
-                name: "organizationId",
-                label: "Organization",
-                type: "select",
-                required: true,
-                options: organizations.map((org) => ({
-                  value: org.id,
-                  label: org.name,
-                })),
-              },
-              {
-                name: "description",
-                label: "Description",
-                placeholder: "A brief description of your project",
-              },
-            ]}
-            isOpen={dialog.isOpen}
-            onOpenChange={dialog.setIsOpen}
-            formData={dialog.formData}
-            onChange={dialog.handleChange}
-            onSubmit={handleCreate}
-            isSubmitting={dialog.isSubmitting}
-            error={dialog.error}
-          />
-        </div>
+        <PageHeader
+          title="Projects"
+          description="Manage your projects across all organizations."
+          action={
+            <CreateDialog
+              title="Create Project"
+              description="Add a new project to one of your organizations."
+              triggerText="Create Project"
+              fields={[
+                {
+                  name: "name",
+                  label: "Project Name",
+                  placeholder: "New Website",
+                  required: true,
+                },
+                {
+                  name: "organizationId",
+                  label: "Organization",
+                  type: "select",
+                  required: true,
+                  options: organizations.map((org) => ({
+                    value: org.id,
+                    label: org.name,
+                  })),
+                },
+                {
+                  name: "description",
+                  label: "Description",
+                  placeholder: "A brief description of your project",
+                },
+              ]}
+              isOpen={dialog.isOpen}
+              onOpenChange={dialog.setIsOpen}
+              formData={dialog.formData}
+              onChange={dialog.handleChange}
+              onSubmit={handleCreate}
+              isSubmitting={dialog.isSubmitting}
+              error={dialog.error}
+            />
+          }
+        />
 
         {projects.length > 0 ? (
           <>
@@ -183,35 +185,30 @@ export default function ProjectsPage() {
             </Card>
 
             <div className="grid gap-6 md:grid-cols-2">
+              <InfoCard
+                title="Project Stats"
+                description="Overview of your project portfolio."
+                items={[
+                  { label: "Active Projects", value: statusCounts.active || 0 },
+                  { label: "Completed Projects", value: statusCounts.completed || 0 },
+                  { label: "In Progress", value: statusCounts.inProgress || 0 },
+                ]}
+              />
+              
               <Card>
                 <CardHeader>
-                  <CardTitle>Project Stats</CardTitle>
-                  <CardDescription>Overview of your project portfolio.</CardDescription>
+                  <CardTitle>By Organization</CardTitle>
+                  <CardDescription>Project distribution across organizations.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-1">
-                        <p className="text-sm font-medium">Active Projects</p>
-                        <p className="text-2xl font-bold">{statusCounts.active}</p>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-sm font-medium">Completed Projects</p>
-                        <p className="text-2xl font-bold">{statusCounts.completed}</p>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-sm font-medium">In Progress</p>
-                        <p className="text-2xl font-bold">{statusCounts.inProgress}</p>
-                      </div>
-                    </div>
-
                     {projectsByOrg
                       .filter((org) => org.count > 0)
                       .map((org) => (
                         <div className="space-y-1" key={org.id}>
                           <div className="flex items-center justify-between">
                             <p className="text-sm font-medium">{org.name}</p>
-                            <p className="text-sm font-medium">{org.count} projects</p>
+                            <p className="text-sm font-medium">{formatCount(org.count, 'project')}</p>
                           </div>
                           <div className="h-2 w-full rounded-full bg-muted">
                             <div

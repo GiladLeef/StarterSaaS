@@ -10,15 +10,7 @@ import { DashboardStats } from "@/components/dashboard/stats"
 import { DashboardPage } from "@/components/dashboard/page"
 import { UserQuickActions } from "@/components/user-quick-actions"
 import { useResource } from "@/hooks/use-resource"
-import {
-  IconDashboard,
-  IconBuilding,
-  IconFolder,
-  IconUser,
-  IconSettings,
-  IconHelp,
-  IconInnerShadowTop,
-} from "@tabler/icons-react"
+import { dashboardNav, dashboardConfig, formatUserForSidebar, getDashboardStats } from "@/lib/data/dashboard-config"
 
 export default function UserDashboard() {
   const router = useRouter()
@@ -45,55 +37,7 @@ export default function UserDashboard() {
     }
   }, [user, router])
 
-  const activeProjects = projects.filter((p: any) => p.status === 'active').length
-  const pendingInvitations = invitations.filter((i: any) => i.status === 'pending').length
-
-  const stats = [
-    {
-      title: "Organizations",
-      value: organizations.length,
-      description: "Your organizations",
-      badge: "Active",
-      footer: "Your organizations",
-      footerDescription: "Teams you're part of",
-    },
-    {
-      title: "Total Projects",
-      value: projects.length,
-      description: "Your projects",
-      badge: "All",
-      footer: "Your projects",
-      footerDescription: "All your projects",
-    },
-    {
-      title: "Active Projects",
-      value: activeProjects,
-      description: "Currently active",
-      badge: "Live",
-      footer: "Currently active",
-      footerDescription: "In-progress projects",
-    },
-    {
-      title: "Invitations",
-      value: pendingInvitations,
-      description: "Pending invitations",
-      badge: "Pending",
-      footer: "Pending invitations",
-      footerDescription: "Review and accept",
-    },
-  ]
-
-  const navItems = [
-    { title: "Dashboard", url: "/dashboard", icon: IconDashboard },
-    { title: "Organizations", url: "/organizations", icon: IconBuilding },
-    { title: "Projects", url: "/projects", icon: IconFolder },
-    { title: "Profile", url: "/profile", icon: IconUser },
-  ]
-
-  const secondaryNavItems = [
-    { title: "Settings", url: "/settings", icon: IconSettings },
-    { title: "Help", url: "/help", icon: IconHelp },
-  ]
+  const stats = getDashboardStats(organizations, projects, invitations)
 
   return (
     <DashboardPage
@@ -101,17 +45,13 @@ export default function UserDashboard() {
         <DashboardLayout
           sidebar={
             <DashboardSidebar
-              title="Platform"
-              titleUrl="/dashboard"
-              icon={<IconInnerShadowTop className="!size-5" />}
-              user={{
-                name: user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : "User",
-                email: user?.email || "user@example.com",
-                avatar: "/avatars/user.jpg",
-              }}
-              navMain={navItems}
-              navSecondary={secondaryNavItems}
-              variant="inset"
+              title={dashboardConfig.title}
+              titleUrl={dashboardConfig.titleUrl}
+              icon={dashboardConfig.icon}
+              user={formatUserForSidebar(user)}
+              navMain={dashboardNav.main}
+              navSecondary={dashboardNav.secondary}
+              variant={dashboardConfig.variant}
             />
           }
           header={<DashboardHeader title={props.title} />}
