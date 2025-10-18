@@ -15,7 +15,7 @@ interface StatCard {
   description: string
   badge: string
   footer: string
-  footerDescription: string
+  footerDescription?: string
 }
 
 interface DashboardStatsProps {
@@ -43,7 +43,9 @@ export function DashboardStats({ stats }: DashboardStatsProps) {
             <div className="line-clamp-1 flex gap-2 font-medium">
               {stat.footer} <IconTrendingUp className="size-4" />
             </div>
-            <div className="text-muted-foreground">{stat.footerDescription}</div>
+            {stat.footerDescription && (
+              <div className="text-muted-foreground">{stat.footerDescription}</div>
+            )}
           </CardFooter>
         </Card>
       ))}

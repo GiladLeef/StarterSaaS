@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { organizationsApi } from "@/app/api/fetcher";
-import { PageHeader } from "@/app/components/layout/header";
+import { PageHeader } from "@/components/common/page-header";
 import { LoadingState, ErrorState } from "@/app/components/ui/state";
 import { EntityForm } from "@/app/components/forms/entity";
 import { DangerZone } from "@/app/components/settings/danger";

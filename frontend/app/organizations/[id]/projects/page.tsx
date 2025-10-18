@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import Link from "next/link";
 import { organizationsApi, projectsApi } from "@/app/api/fetcher";
 import { formatRelativeTime } from "@/app/utils/dates";
-import { PageHeader, PageHeaderAction } from "@/app/components/layout/header";
+import { PageHeader } from "@/components/common/page-header";
 import { LoadingState, ErrorState } from "@/app/components/ui/state";
 
 export default function OrganizationProjectsPage() {
@@ -86,12 +86,12 @@ export default function OrganizationProjectsPage() {
           description={`Manage projects for ${organization.name}`}
           actions={
             <>
-              <PageHeaderAction href={`/organizations/${organization.id}`} variant="outline">
-                Organization Details
-              </PageHeaderAction>
-              <PageHeaderAction onClick={() => router.push("/projects")}>
+              <Button variant="outline" asChild>
+                <a href={`/organizations/${organization.id}`}>Organization Details</a>
+              </Button>
+              <Button onClick={() => router.push("/projects")}>
                 Create Project
-              </PageHeaderAction>
+              </Button>
             </>
           }
         />

@@ -1,15 +1,16 @@
-"use client";
+"use client"
 
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/app/providers/auth";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Avatar } from "@/components/ui/avatar";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { userApi } from "@/app/api/fetcher";
-import { useFormDialog } from "@/app/hooks/dialog";
-import { UserDashboardLayout } from "@/components/dashboard/user";
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/app/providers/auth"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Avatar } from "@/components/ui/avatar"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { userApi } from "@/app/api/fetcher"
+import { useFormDialog } from "@/app/hooks/dialog"
+import { UserDashboardLayout } from "@/components/dashboard/user"
+import { PageHeader } from "@/components/common/page-header"
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -50,7 +51,12 @@ export default function ProfilePage() {
 
   const content = (
     <div className="px-4 lg:px-6">
-      <div className="grid gap-6 md:grid-cols-3">
+      <PageHeader
+        title="Profile"
+        description="View and manage your profile information"
+      />
+
+      <div className="grid gap-6 md:grid-cols-3 mt-6">
         <Card className="md:col-span-1">
           <CardHeader>
             <CardTitle>Profile Information</CardTitle>

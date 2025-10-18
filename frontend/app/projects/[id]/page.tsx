@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
 import Link from "next/link";
 import { projectsApi, organizationsApi } from "@/app/api/fetcher";
-import { PageHeader, PageHeaderAction } from "@/app/components/layout/header";
+import { PageHeader } from "@/components/common/page-header";
 import { LoadingState, ErrorState } from "@/app/components/ui/state";
 import { DangerZone } from "@/app/components/settings/danger";
 
@@ -115,9 +115,9 @@ export default function ProjectDetailsPage() {
           actions={
             <>
               <StatusBadge status={project.status || "inactive"} />
-              <PageHeaderAction href={`/projects/${project.id}/settings`} variant="outline">
-                Settings
-              </PageHeaderAction>
+              <Button variant="outline" asChild>
+                <a href={`/projects/${project.id}/settings`}>Settings</a>
+              </Button>
             </>
           }
         />

@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import Link from "next/link";
 import { organizationsApi, projectsApi, invitationsApi } from "@/app/api/fetcher";
 import { formatRelativeTime } from "@/app/utils/dates";
-import { PageHeader, PageHeaderAction } from "@/app/components/layout/header";
+import { PageHeader } from "@/components/common/page-header";
 import { LoadingState, ErrorState } from "@/app/components/ui/state";
 
 export default function OrganizationDetailsPage() {
@@ -118,17 +118,17 @@ export default function OrganizationDetailsPage() {
   return (
     <div className="flex min-h-screen w-full flex-col">
       <div className="container flex flex-col gap-6 py-8">
-        <PageHeader
+        <PageHeader 
           title={organization.name}
           description={organization.description || "No description provided"}
           actions={
             <>
-              <PageHeaderAction href={`/organizations/${organization.id}/settings`} variant="outline">
-                Settings
-              </PageHeaderAction>
-              <PageHeaderAction onClick={() => router.push("/projects")}>
+              <Button variant="outline" asChild>
+                <a href={`/organizations/${organization.id}/settings`}>Settings</a>
+              </Button>
+              <Button onClick={() => router.push("/projects")}>
                 Create Project
-              </PageHeaderAction>
+              </Button>
             </>
           }
         />

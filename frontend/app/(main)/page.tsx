@@ -29,6 +29,8 @@ import {
   platformStats, 
   testimonials 
 } from '@/lib/data/landing-content'
+import { ctaContent } from '@/lib/data/cta-content'
+import { CTAWithSideContent } from '@/components/landing/cta-with-side-content'
 
 export default function HomePage() {
   const { isAuthenticated, user } = useAuth()
@@ -247,80 +249,12 @@ export default function HomePage() {
         <TestimonialGrid testimonials={testimonials} columns={3} />
       </Section>
 
-      {/* CTA Section - DARK with side content like screenshot */}
-      <section className="w-full bg-black text-white px-6 py-32">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
-            {/* Left: Main CTA */}
-            <div>
-              <h2 className="text-5xl md:text-6xl font-serif mb-8 leading-tight">
-                Try Pearl for free
-              </h2>
-              <Button 
-                size="lg" 
-                className="bg-white text-black hover:bg-gray-200 rounded px-8 h-14 text-base"
-                asChild
-              >
-                <a href="/register">
-                  Get started - It's free
-                  <IconArrowRight className="ml-2 w-5 h-5" />
-                </a>
-              </Button>
-            </div>
-
-            {/* Right: Info boxes */}
-            <div className="space-y-8">
-              {/* Built for Trust */}
-              <div>
-                <h3 className="text-2xl font-serif mb-4">Built for Trust, Engineered for Security</h3>
-                <div className="flex items-center gap-3 mb-2">
-                  <span className="text-sm text-gray-400">We are</span>
-                  <span className="px-3 py-1 bg-blue-600 text-white text-xs font-semibold rounded">SOC II</span>
-                  <span className="px-3 py-1 bg-blue-600 text-white text-xs font-semibold rounded">HIPAA</span>
-                  <span className="px-3 py-1 bg-blue-600 text-white text-xs font-semibold rounded">GDPR</span>
-                  <span className="text-sm text-gray-400">compliant.</span>
-                </div>
-              </div>
-
-              {/* Book a Demo */}
-              <div className="border-t border-white/10 pt-8">
-                <h3 className="text-xl font-semibold mb-3">Book a Demo</h3>
-                <p className="text-gray-400 mb-4">
-                  Interested in seeing Pearl in action? Schedule a personalized demo with our team.
-                </p>
-                <Button 
-                  variant="outline" 
-                  className="border-white/20 text-white hover:bg-white/10 rounded"
-                  asChild
-                >
-                  <a href="#demo">
-                    Schedule a Demo
-                    <IconArrowRight className="ml-2 w-4 h-4" />
-                  </a>
-                </Button>
-              </div>
-
-              {/* View Pricing */}
-              <div className="border-t border-white/10 pt-8">
-                <h3 className="text-xl font-semibold mb-3">View Pricing</h3>
-                <p className="text-gray-400 mb-4">
-                  Explore our flexible pricing plans and find the perfect fit for your business.
-                </p>
-                <Button 
-                  variant="outline" 
-                  className="border-white/20 text-white hover:bg-white/10 rounded"
-                  asChild
-                >
-                  <a href="#pricing">
-                    Pricing
-                    <IconArrowRight className="ml-2 w-4 h-4" />
-                  </a>
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* CTA Section */}
+      <CTAWithSideContent
+        title={ctaContent.title}
+        primaryAction={ctaContent.primaryAction}
+        sideContent={ctaContent.sideContent}
+      />
 
       {/* Footer */}
       <Footer />
