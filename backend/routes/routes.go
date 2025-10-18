@@ -14,6 +14,9 @@ func SetupRoutes(r *gin.Engine) {
 
 	v1 := r.Group("/api/v1")
 	{
+		v1.GET("/plans/public", resources.GetPublicPlans)
+		v1.GET("/settings/public", resources.GetPublicSettings)
+
 		auth := v1.Group("/auth")
 		{
 			auth.POST("/register", resources.Register)
@@ -26,12 +29,15 @@ func SetupRoutes(r *gin.Engine) {
 		protected := v1.Group("/")
 		protected.Use(middleware.AuthRequired())
 		{
-			users := protected.Group("/users")
-			{
-				users.GET("/me", resources.GetCurrentUser)
-				users.PUT("/me", resources.UpdateCurrentUser)
-				users.DELETE("/me", resources.DeleteCurrentUser)
-			}
+		users := protected.Group("/users")
+		{
+			users.GET("/me", resources.GetCurrentUser)
+			users.PUT("/me", resources.UpdateCurrentUser)
+			users.DELETE("/me", resources.DeleteCurrentUser)
+			users.POST("/me/avatar", resources.UploadAvatar)
+			users.POST("/me/avatar/generate", resources.GenerateAvatar)
+			users.DELETE("/me/avatar", resources.DeleteAvatar)
+		}
 
 		orgs := protected.Group("/organizations")
 		{
@@ -52,6 +58,11 @@ func SetupRoutes(r *gin.Engine) {
 		}
 
 		utils.Route(protected, "/subscriptions", resources.SubscriptionHandlers)
+		utils.Route(protected, "/plans", resources.PlanHandlers)
+		utils.Route(protected, "/settings", resources.SettingHandlers)
+		
+		protected.GET("/settings/all", resources.GetAllSettings)
+		protected.PUT("/settings/batch", resources.UpdateSettings)
 
 		billing := protected.Group("/billing")
 		{

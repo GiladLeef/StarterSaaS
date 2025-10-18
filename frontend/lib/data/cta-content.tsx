@@ -1,5 +1,7 @@
+import { appConfig } from '@/lib/config'
+
 export const ctaContent = {
-  title: "Try StarterSaaS for free",
+  title: `Try ${appConfig.siteName} for free`,
   primaryAction: {
     label: "Get started - It's free",
     href: "/register"
@@ -17,7 +19,7 @@ export const ctaContent = {
     },
     {
       title: "Book a Demo",
-      description: "Interested in seeing StarterSaaS in action? Schedule a personalized demo with our team.",
+      description: `Interested in seeing ${appConfig.siteName} in action? Schedule a personalized demo with our team.`,
       action: {
         label: "Schedule a Demo",
         href: "#demo"

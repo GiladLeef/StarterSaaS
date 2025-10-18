@@ -15,6 +15,9 @@ func RunMigrations() error {
 		&models.Subscription{},
 		&models.OrganizationInvitation{},
 		&models.PasswordResetToken{},
+		&models.Plan{},
+		&models.PlanFeature{},
+		&models.Setting{},
 	)
 
 	if err != nil {

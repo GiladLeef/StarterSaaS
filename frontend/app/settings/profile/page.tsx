@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { AvatarUpload } from "@/components/avatar-upload"
 import { userApi } from "@/app/api/fetcher"
 
 export default function ProfileSettingsPage() {
@@ -63,6 +64,30 @@ export default function ProfileSettingsPage() {
 
   return (
     <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Profile Picture</CardTitle>
+          <CardDescription>
+            Upload or generate your profile picture
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <AvatarUpload
+            currentAvatar={user?.avatar}
+            userName={`${formData.firstName} ${formData.lastName}`.trim()}
+            userEmail={formData.email}
+            onAvatarChange={(newAvatar) => {
+              if (updateUser) {
+                updateUser({
+                  ...user,
+                  avatar: newAvatar
+                })
+              }
+            }}
+          />
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle>Profile Information</CardTitle>

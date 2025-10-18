@@ -2,6 +2,7 @@ package utils
 
 import (
 	"platform/backend/config"
+	"platform/backend/db"
 	"platform/backend/models"
 	"time"
 
@@ -11,48 +12,11 @@ import (
 // BillingService provides DRY methods for billing operations
 type BillingService struct{}
 
-// PlanPrices maps plan names to their monthly prices
-var PlanPrices = map[string]float64{
-	config.PlanFree:       0,
-	config.PlanPro:        29,
-	config.PlanEnterprise: 99,
-}
-
-// PlanFeatures maps plan names to their feature limits
-type PlanLimits struct {
-	MaxOrganizations int
-	MaxProjects      int
-	MaxMembers       int
-	HasPrioritySupport bool
-	HasAdvancedFeatures bool
-	HasCustomIntegrations bool
-}
-
-var PlanFeatureLimits = map[string]PlanLimits{
-	config.PlanFree: {
-		MaxOrganizations:      1,
-		MaxProjects:           3,
-		MaxMembers:            3,
-		HasPrioritySupport:    false,
-		HasAdvancedFeatures:   false,
-		HasCustomIntegrations: false,
-	},
-	config.PlanPro: {
-		MaxOrganizations:      -1, // unlimited
-		MaxProjects:           -1,
-		MaxMembers:            -1,
-		HasPrioritySupport:    true,
-		HasAdvancedFeatures:   true,
-		HasCustomIntegrations: true,
-	},
-	config.PlanEnterprise: {
-		MaxOrganizations:      -1,
-		MaxProjects:           -1,
-		MaxMembers:            -1,
-		HasPrioritySupport:    true,
-		HasAdvancedFeatures:   true,
-		HasCustomIntegrations: true,
-	},
+// GetPlanFromDB retrieves plan details from database
+func (bs *BillingService) GetPlanFromDB(planName string) (*models.Plan, error) {
+	var plan models.Plan
+	err := db.DB.Where("name = ? AND is_active = ?", planName, true).First(&plan).Error
+	return &plan, err
 }
 
 // CreateSubscription creates a new subscription with DRY logic
@@ -86,18 +50,18 @@ func (bs *BillingService) CanAccessFeature(subscription *models.Subscription, fe
 		return false
 	}
 
-	limits, exists := PlanFeatureLimits[subscription.PlanName]
-	if !exists {
+	plan, err := bs.GetPlanFromDB(subscription.PlanName)
+	if err != nil {
 		return false
 	}
 
 	switch feature {
 	case "priority_support":
-		return limits.HasPrioritySupport
+		return plan.HasPrioritySupport
 	case "advanced_features":
-		return limits.HasAdvancedFeatures
+		return plan.HasAdvancedFeatures
 	case "custom_integrations":
-		return limits.HasCustomIntegrations
+		return plan.HasCustomIntegrations
 	default:
 		return false
 	}
@@ -109,19 +73,19 @@ func (bs *BillingService) CheckLimit(subscription *models.Subscription, limitTyp
 		return false
 	}
 
-	limits, exists := PlanFeatureLimits[subscription.PlanName]
-	if !exists {
+	plan, err := bs.GetPlanFromDB(subscription.PlanName)
+	if err != nil {
 		return false
 	}
 
 	var limit int
 	switch limitType {
 	case "organizations":
-		limit = limits.MaxOrganizations
+		limit = plan.MaxOrganizations
 	case "projects":
-		limit = limits.MaxProjects
+		limit = plan.MaxProjects
 	case "members":
-		limit = limits.MaxMembers
+		limit = plan.MaxMembers
 	default:
 		return false
 	}

@@ -7,6 +7,21 @@ import (
 	"gorm.io/gorm"
 )
 
+// Generic DRY database operations
+
+func Save[T any](model *T) error {
+	return db.DB.Save(model).Error
+}
+
+func Create[T any](model *T) error {
+	return db.DB.Create(model).Error
+}
+
+func Delete[T any](model *T) error {
+	return db.DB.Delete(model).Error
+}
+
+// Legacy functions for backward compatibility
 func CreateDB(model interface{}) error {
 	return db.DB.Create(model).Error
 }

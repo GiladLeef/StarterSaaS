@@ -5,7 +5,6 @@ import (
 	"errors"
 	"io"
 	"platform/backend/config"
-	"platform/backend/db"
 	"platform/backend/models"
 	"platform/backend/utils"
 	"time"
@@ -35,8 +34,14 @@ func CreateCheckoutSession(c *gin.Context) {
 
 		utils.TryErr(c.ShouldBindJSON(&req))
 
-		// Validate plan
-		if req.PlanName == config.PlanFree {
+		// Validate plan exists and is not free
+		plan, err := utils.Where[models.Plan]("name", req.PlanName)
+		if err != nil || !plan.IsActive {
+			utils.Respond(c, utils.StatusBadRequest, "Invalid plan selected", nil)
+			return
+		}
+
+		if plan.MonthlyPrice == 0 && plan.YearlyPrice == 0 {
 			utils.Respond(c, utils.StatusBadRequest, "Free plan does not require checkout", nil)
 			return
 		}
@@ -123,7 +128,7 @@ func handleCheckoutCompleted(event stripe.Event) {
 	subscription.StripeSubscriptionID = session.Subscription.ID
 	subscription.StripeCustomerID = session.Customer.ID
 
-	db.DB.Create(subscription)
+	utils.Create(subscription)
 }
 
 func handleSubscriptionUpdated(event stripe.Event) {
@@ -132,8 +137,8 @@ func handleSubscriptionUpdated(event stripe.Event) {
 		return
 	}
 
-	var dbSub models.Subscription
-	if err := db.DB.Where("stripe_subscription_id = ?", sub.ID).First(&dbSub).Error; err != nil {
+	dbSub, err := utils.Where[models.Subscription]("stripe_subscription_id", sub.ID)
+	if err != nil {
 		return
 	}
 
@@ -142,7 +147,7 @@ func handleSubscriptionUpdated(event stripe.Event) {
 		dbSub.EndDate = time.Unix(sub.CurrentPeriodEnd, 0)
 	}
 
-	db.DB.Save(&dbSub)
+	utils.Save(&dbSub)
 }
 
 func handleSubscriptionDeleted(event stripe.Event) {
@@ -151,13 +156,13 @@ func handleSubscriptionDeleted(event stripe.Event) {
 		return
 	}
 
-	var dbSub models.Subscription
-	if err := db.DB.Where("stripe_subscription_id = ?", sub.ID).First(&dbSub).Error; err != nil {
+	dbSub, err := utils.Where[models.Subscription]("stripe_subscription_id", sub.ID)
+	if err != nil {
 		return
 	}
 
 	dbSub.Status = config.StatusCancelled
-	db.DB.Save(&dbSub)
+	utils.Save(&dbSub)
 }
 
 func handlePaymentSucceeded(event stripe.Event) {
@@ -170,8 +175,8 @@ func handlePaymentSucceeded(event stripe.Event) {
 		return
 	}
 
-	var dbSub models.Subscription
-	if err := db.DB.Where("stripe_subscription_id = ?", invoice.Subscription.ID).First(&dbSub).Error; err != nil {
+	dbSub, err := utils.Where[models.Subscription]("stripe_subscription_id", invoice.Subscription.ID)
+	if err != nil {
 		return
 	}
 
@@ -180,7 +185,7 @@ func handlePaymentSucceeded(event stripe.Event) {
 		dbSub.EndDate = time.Unix(invoice.PeriodEnd, 0)
 	}
 
-	db.DB.Save(&dbSub)
+	utils.Save(&dbSub)
 }
 
 func handlePaymentFailed(event stripe.Event) {
@@ -193,19 +198,15 @@ func handlePaymentFailed(event stripe.Event) {
 		return
 	}
 
-	var dbSub models.Subscription
-	if err := db.DB.Where("stripe_subscription_id = ?", invoice.Subscription.ID).First(&dbSub).Error; err != nil {
+	dbSub, err := utils.Where[models.Subscription]("stripe_subscription_id", invoice.Subscription.ID)
+	if err != nil {
 		return
 	}
 
 	dbSub.Status = "past_due"
-	db.DB.Save(&dbSub)
+	utils.Save(&dbSub)
 
-	user := models.User{}
-	db.DB.Joins("JOIN organization_memberships ON organization_memberships.user_id = users.id").
-		Where("organization_memberships.organization_id = ?", dbSub.OrganizationID).
-		First(&user)
-
+	user := utils.Try(utils.GetOrgOwner(dbSub.OrganizationID))
 	if user.Email != "" {
 		utils.SendPaymentFailedEmail(user.Email, dbSub.PlanName)
 	}
@@ -250,8 +251,7 @@ func GetSubscriptionStatus(c *gin.Context) {
 		orgID := utils.Try(uuid.Parse(organizationID))
 		utils.Check(utils.CheckOwnership(orgID, userID))
 
-		var sub models.Subscription
-		err := db.DB.Where("organization_id = ?", orgID).First(&sub).Error
+		sub, err := utils.Where[models.Subscription]("organization_id", orgID)
 		
 		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 			utils.Respond(c, 500, "Failed to query subscription", nil)
@@ -259,11 +259,25 @@ func GetSubscriptionStatus(c *gin.Context) {
 		}
 		
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			utils.Respond(c, utils.StatusOK, "", gin.H{
-				"plan":          config.PlanFree,
-				"status":        config.StatusActive,
-				"billingPeriod": config.BillingMonthly,
+			freePlan := utils.FirstOrNil[models.Plan](map[string]any{
+				"monthly_price": 0,
+				"yearly_price":  0,
+				"is_active":     true,
 			})
+			
+			if freePlan != nil {
+				utils.Respond(c, utils.StatusOK, "", gin.H{
+					"plan":          freePlan.Name,
+					"status":        config.StatusActive,
+					"billingPeriod": config.BillingMonthly,
+				})
+			} else {
+				utils.Respond(c, utils.StatusOK, "", gin.H{
+					"plan":          "none",
+					"status":        "inactive",
+					"billingPeriod": config.BillingMonthly,
+				})
+			}
 			return
 		}
 
@@ -293,8 +307,7 @@ func GetCustomerPortal(c *gin.Context) {
 		orgID := utils.Try(uuid.Parse(organizationID))
 		utils.Check(utils.CheckOwnership(orgID, userID))
 
-		var sub models.Subscription
-		err := db.DB.Where("organization_id = ?", orgID).First(&sub).Error
+		sub, err := utils.Where[models.Subscription]("organization_id", orgID)
 		
 		if err != nil || sub.StripeCustomerID == "" {
 			utils.Respond(c, utils.StatusBadRequest, "No active subscription found", nil)

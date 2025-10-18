@@ -3,6 +3,7 @@ import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "./providers/auth";
 import ProtectedRoute from "./components/layout/protected";
+import { NavigationProgress } from "@/components/navigation-progress";
 import { cn } from "@/lib/utils";
 
 const inter = Inter({
@@ -36,6 +37,7 @@ export default function RootLayout({
           playfair.variable
         )}
       >
+        <NavigationProgress />
         <AuthProvider>
           <ProtectedRoute>
             {children}

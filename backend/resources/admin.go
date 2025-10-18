@@ -2,7 +2,6 @@ package resources
 
 import (
 	"fmt"
-	"platform/backend/db"
 	"platform/backend/models"
 	"platform/backend/utils"
 	"reflect"
@@ -18,6 +17,8 @@ func init() {
 	utils.RegisterAdminResource("project", models.Project{}, []string{"list", "view", "edit", "delete"})
 	utils.RegisterAdminResource("subscription", models.Subscription{}, []string{"list", "view", "edit"})
 	utils.RegisterAdminResource("invitation", models.OrganizationInvitation{}, []string{"list", "view", "delete"})
+	utils.RegisterAdminResource("plan", models.Plan{}, []string{"list", "view", "edit", "create", "delete"})
+	utils.RegisterAdminResource("setting", models.Setting{}, []string{"list", "view", "edit", "create", "delete"})
 }
 
 func GetAdminResources(c *gin.Context) {
@@ -67,9 +68,9 @@ func UpdateAdminResource(c *gin.Context) {
 		metadata := utils.GetAdminResource(resourceName)
 		utils.Check(metadata != nil)
 		
-		// Get the existing record
+		// Get the existing record using DRY utility
 		existingPtr := reflect.New(metadata.ModelType)
-		utils.TryErr(db.DB.First(existingPtr.Interface(), "id = ?", id).Error)
+		utils.TryErr(utils.FindByIDGeneric(existingPtr.Interface(), id))
 		
 		// Bind the update request
 		var updateData map[string]interface{}
@@ -94,8 +95,8 @@ func UpdateAdminResource(c *gin.Context) {
 			}
 		}
 		
-		// Save the updated record
-		utils.TryErr(db.DB.Save(existingPtr.Interface()).Error)
+		// Save the updated record using DRY utility
+		utils.TryErr(utils.SaveGeneric(existingPtr.Interface()))
 		
 		utils.Respond(c, utils.StatusOK, resourceName+" updated successfully", gin.H{
 			resourceName: existingPtr.Interface(),
@@ -113,9 +114,9 @@ func DeleteAdminResource(c *gin.Context) {
 		metadata := utils.GetAdminResource(resourceName)
 		utils.Check(metadata != nil)
 		
-		// Delete the record
+		// Delete the record using DRY utility
 		recordPtr := reflect.New(metadata.ModelType)
-		utils.TryErr(db.DB.Delete(recordPtr.Interface(), "id = ?", id).Error)
+		utils.TryErr(utils.DeleteByIDGeneric(recordPtr.Interface(), id))
 		
 		utils.Respond(c, utils.StatusOK, resourceName+" deleted successfully", nil)
 	})

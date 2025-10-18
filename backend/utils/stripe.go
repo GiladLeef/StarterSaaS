@@ -4,6 +4,8 @@ import (
 	"errors"
 	"os"
 	"platform/backend/config"
+	"platform/backend/db"
+	"platform/backend/models"
 
 	"github.com/stripe/stripe-go/v81"
 	portalSession "github.com/stripe/stripe-go/v81/billingportal/session"
@@ -15,9 +17,8 @@ import (
 
 // StripeService provides DRY methods for Stripe operations
 type StripeService struct {
-	SecretKey      string
-	WebhookSecret  string
-	PriceIDs       map[string]map[string]string // plan -> interval -> priceID
+	SecretKey     string
+	WebhookSecret string
 }
 
 // NewStripeService creates a new Stripe service instance
@@ -27,16 +28,6 @@ func NewStripeService() *StripeService {
 	return &StripeService{
 		SecretKey:     os.Getenv("STRIPE_SECRET_KEY"),
 		WebhookSecret: os.Getenv("STRIPE_WEBHOOK_SECRET"),
-		PriceIDs: map[string]map[string]string{
-			config.PlanPro: {
-				config.BillingMonthly: os.Getenv("STRIPE_PRICE_PRO_MONTHLY"),
-				config.BillingYearly:  os.Getenv("STRIPE_PRICE_PRO_YEARLY"),
-			},
-			config.PlanEnterprise: {
-				config.BillingMonthly: os.Getenv("STRIPE_PRICE_ENTERPRISE_MONTHLY"),
-				config.BillingYearly:  os.Getenv("STRIPE_PRICE_ENTERPRISE_YEARLY"),
-			},
-		},
 	}
 }
 
@@ -95,25 +86,23 @@ func (ss *StripeService) CreateCheckoutSession(
 
 // GetPriceID retrieves the Stripe price ID for a plan and interval
 func (ss *StripeService) GetPriceID(planName string, interval string) (string, error) {
-	if planName == config.PlanFree {
-		return "", errors.New("free plan does not require Stripe")
+	var plan models.Plan
+	err := db.DB.Where("name = ? AND is_active = ?", planName, true).First(&plan).Error
+	if err != nil {
+		return "", errors.New("plan not found or inactive")
 	}
 
-	planPrices, exists := ss.PriceIDs[planName]
-	if !exists {
-		return "", errors.New("invalid plan: " + planName)
+	if interval == config.BillingYearly {
+		if plan.StripePriceIDYearly == "" {
+			return "", errors.New("yearly price ID not configured for this plan")
+		}
+		return plan.StripePriceIDYearly, nil
 	}
 
-	priceID, exists := planPrices[interval]
-	if !exists {
-		return "", errors.New("invalid billing interval: " + interval)
+	if plan.StripePriceIDMonthly == "" {
+		return "", errors.New("monthly price ID not configured for this plan")
 	}
-
-	if priceID == "" {
-		return "", errors.New("price ID not configured for " + planName + " " + interval)
-	}
-
-	return priceID, nil
+	return plan.StripePriceIDMonthly, nil
 }
 
 // CancelSubscription cancels a Stripe subscription

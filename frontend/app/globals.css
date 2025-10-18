@@ -120,6 +120,13 @@
   body {
     @apply bg-background text-foreground;
   }
+  
+  /* Smooth page transitions */
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-serif), serif;
   }

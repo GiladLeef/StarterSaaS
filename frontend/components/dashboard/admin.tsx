@@ -4,6 +4,7 @@ import React from "react"
 import { DashboardLayout } from "./layout"
 import { DashboardSidebar } from "./sidebar"
 import { DashboardHeader } from "./header"
+import { appConfig } from "@/lib/config"
 import {
   IconDashboard,
   IconUsers,
@@ -45,13 +46,13 @@ export function AdminDashboardLayout({
     <DashboardLayout
       sidebar={
         <DashboardSidebar
-          title="StarterSaaS"
+          title={appConfig.siteName}
           titleUrl="/admin"
           icon={<IconInnerShadowTop className="!size-5" />}
           user={{
             name: user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : "Admin",
-            email: user?.email || "admin@example.com",
-            avatar: "/avatars/admin.jpg",
+            email: user?.email || appConfig.supportEmail,
+            avatar: user?.avatar || appConfig.defaultAdminAvatar,
           }}
           navMain={[
             { title: "Dashboard", url: "/admin", icon: IconDashboard },

@@ -7,6 +7,7 @@ import {
   IconHelp,
   IconInnerShadowTop,
 } from '@tabler/icons-react'
+import { appConfig } from '@/lib/config'
 
 export const dashboardNav = {
   main: [
@@ -22,7 +23,7 @@ export const dashboardNav = {
 }
 
 export const dashboardConfig = {
-  title: "Platform",
+  title: appConfig.siteName,
   titleUrl: "/dashboard",
   icon: <IconInnerShadowTop className="!size-5" />,
   variant: "inset" as const
@@ -66,7 +67,7 @@ export const getDashboardStats = (organizations: any[], projects: any[], invitat
 
 export const formatUserForSidebar = (user: any) => ({
   name: user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : "User",
-  email: user?.email || "user@example.com",
-  avatar: "/avatars/user.jpg",
+  email: user?.email || appConfig.supportEmail,
+  avatar: user?.avatar || appConfig.defaultUserAvatar,
 })
 

@@ -11,38 +11,39 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { IconMail, IconMapPin, IconPhone, IconBrandTwitter, IconBrandLinkedin, IconBrandGithub } from '@tabler/icons-react'
-
-const contactMethods = [
-  {
-    icon: IconMail,
-    title: "Email",
-    description: "Our team will respond within 24 hours",
-    value: "hello@startersaas.com",
-    link: "mailto:hello@startersaas.com"
-  },
-  {
-    icon: IconPhone,
-    title: "Phone",
-    description: "Mon-Fri from 8am to 6pm EST",
-    value: "+1 (555) 123-4567",
-    link: "tel:+15551234567"
-  },
-  {
-    icon: IconMapPin,
-    title: "Office",
-    description: "Visit us in person",
-    value: "123 SaaS Street, San Francisco, CA 94105",
-    link: "https://maps.google.com"
-  }
-]
-
-const socialLinks = [
-  { icon: IconBrandTwitter, label: "Twitter", link: "https://twitter.com" },
-  { icon: IconBrandLinkedin, label: "LinkedIn", link: "https://linkedin.com" },
-  { icon: IconBrandGithub, label: "GitHub", link: "https://github.com" }
-]
+import { appConfig } from '@/lib/config'
 
 export default function ContactPage() {
+  const contactMethods = [
+    {
+      icon: IconMail,
+      title: "Email",
+      description: "Our team will respond within 24 hours",
+      value: appConfig.supportEmail,
+      link: `mailto:${appConfig.supportEmail}`
+    },
+    {
+      icon: IconPhone,
+      title: "Phone",
+      description: "Mon-Fri from 8am to 6pm EST",
+      value: appConfig.companyPhone,
+      link: `tel:${appConfig.companyPhone.replace(/[^0-9]/g, '')}`
+    },
+    {
+      icon: IconMapPin,
+      title: "Office",
+      description: "Visit us in person",
+      value: appConfig.companyAddress,
+      link: `https://maps.google.com/maps?q=${encodeURIComponent(appConfig.companyAddress)}`
+    }
+  ]
+
+  const socialLinks = [
+    { icon: IconBrandTwitter, label: "Twitter", link: appConfig.twitterUrl },
+    { icon: IconBrandLinkedin, label: "LinkedIn", link: appConfig.linkedinUrl },
+    { icon: IconBrandGithub, label: "GitHub", link: appConfig.githubUrl }
+  ]
+  
   const [formData, setFormData] = useState({
     name: '',
     email: '',

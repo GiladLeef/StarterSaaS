@@ -60,12 +60,8 @@ const handleAuthSuccess = (router: any, user: any) => {
   // Redirect admin to /admin, regular users to /dashboard
   const redirectPath = user?.role === 'admin' ? '/admin' : '/dashboard';
   
-  // Force a page reload to ensure token is properly loaded
-  if (typeof window !== 'undefined') {
-    window.location.href = redirectPath;
-  } else {
-    router.push(redirectPath);
-  }
+  // Use Next.js router for client-side navigation (no page reload)
+  router.push(redirectPath);
 };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -104,7 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return;
         }
         
-        // Has token - fetch user data to maintain auth state (even on public routes)
+        // Has token - fetch user data to maintain auth state (only on mount)
         try {
           const userData = await authApi.getCurrentUser();
           const userObject = extractUserFromResponse(userData);
@@ -130,8 +126,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     };
     
+    // Only check auth on initial mount, not on every route change
     checkAuth();
-  }, [pathname, isPublicRoute, router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   
   const login = async (email: string, password: string) => {
     setIsLoading(true);

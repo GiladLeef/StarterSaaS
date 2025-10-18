@@ -4,6 +4,7 @@
  */
 
 import { loadStripe, Stripe } from '@stripe/stripe-js'
+import { appConfig } from '@/lib/config'
 
 let stripePromise: Promise<Stripe | null> | null = null
 
@@ -37,8 +38,7 @@ export interface CheckoutSessionParams {
 export async function createCheckoutSession(
   params: CheckoutSessionParams
 ): Promise<{ sessionId: string; sessionUrl: string }> {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
-  const response = await fetch(`${apiUrl}/api/v1/billing/checkout`, {
+  const response = await fetch(`${appConfig.apiUrl}/api/v1/billing/checkout`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -75,9 +75,8 @@ export async function redirectToCheckout(params: CheckoutSessionParams) {
  * Get current subscription status
  */
 export async function getSubscriptionStatus(organizationId: string) {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
   const response = await fetch(
-    `${apiUrl}/api/v1/billing/subscription/status?organizationId=${organizationId}`,
+    `${appConfig.apiUrl}/api/v1/billing/subscription/status?organizationId=${organizationId}`,
     {
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
@@ -97,8 +96,7 @@ export async function getSubscriptionStatus(organizationId: string) {
  * Cancel subscription
  */
 export async function cancelSubscription(subscriptionId: string) {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
-  const response = await fetch(`${apiUrl}/api/v1/billing/subscription/${subscriptionId}`, {
+  const response = await fetch(`${appConfig.apiUrl}/api/v1/billing/subscription/${subscriptionId}`, {
     method: 'DELETE',
     headers: {
       'Authorization': `Bearer ${localStorage.getItem('authToken')}`,

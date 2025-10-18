@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { AdminDashboardLayout } from "@/components/dashboard/admin"
 import { useAdminData } from "@/hooks/use-admin"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,27 +11,75 @@ import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { IconSettings, IconShieldCheck, IconMail, IconDatabase, IconKey } from "@tabler/icons-react"
+import { apiFetch } from "@/app/api/fetcher"
 
 export default function AdminSettingsPage() {
   const { user, resourcesArray, isLoading } = useAdminData()
   const [settings, setSettings] = useState({
-    siteName: "StarterSaaS",
-    siteUrl: "https://startersaas.com",
-    supportEmail: "support@startersaas.com",
+    siteName: "",
+    siteUrl: "",
+    supportEmail: "",
     enableRegistration: true,
     enableGoogleAuth: false,
     stripeConfigured: false,
   })
 
   const [saving, setSaving] = useState(false)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    loadSettings()
+  }, [])
+
+  const loadSettings = async () => {
+    try {
+      const response = await apiFetch('/api/v1/settings/all')
+      if (response.success && response.data?.settings) {
+        const apiSettings = response.data.settings
+        setSettings({
+          siteName: apiSettings.site_name || "",
+          siteUrl: apiSettings.site_url || "",
+          supportEmail: apiSettings.support_email || "",
+          enableRegistration: apiSettings.enable_registration === "true",
+          enableGoogleAuth: apiSettings.enable_google_auth === "true",
+          stripeConfigured: apiSettings.stripe_configured === "true",
+        })
+      }
+    } catch (error) {
+      console.error('Failed to load settings:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleSave = async (section: string) => {
     setSaving(true)
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    setSaving(false)
+    try {
+      const settingsToSave: Record<string, string> = {
+        site_name: settings.siteName,
+        site_url: settings.siteUrl,
+        support_email: settings.supportEmail,
+        enable_registration: settings.enableRegistration.toString(),
+        enable_google_auth: settings.enableGoogleAuth.toString(),
+        stripe_configured: settings.stripeConfigured.toString(),
+      }
+
+      const response = await apiFetch('/api/v1/settings/batch', {
+        method: 'PUT',
+        body: JSON.stringify(settingsToSave),
+      })
+
+      if (response.success) {
+        await loadSettings()
+      }
+    } catch (error) {
+      console.error('Failed to save settings:', error)
+    } finally {
+      setSaving(false)
+    }
   }
 
-  if (isLoading) {
+  if (isLoading || loading) {
     return (
       <AdminDashboardLayout user={user} resources={resourcesArray} title="Settings">
         <div className="flex items-center justify-center p-8">

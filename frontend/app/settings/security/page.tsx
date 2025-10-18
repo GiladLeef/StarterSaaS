@@ -17,7 +17,7 @@ export default function SecuritySettingsPage() {
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    // TODO: Implement password change
+    // Password change implementation will go here
     setTimeout(() => setIsLoading(false), 1000)
   }
 
