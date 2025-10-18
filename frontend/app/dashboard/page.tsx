@@ -1,61 +1,89 @@
-"use client";
+"use client"
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { StatusBadge } from "@/components/ui/status-badge";
-import { useRouter } from "next/navigation";
-import { organizationsApi, projectsApi } from "@/app/api/fetcher";
-import { useAuth } from "@/app/providers/auth";
-import { formatRelativeTime } from "@/app/utils/dates";
-import { useAutoFetch } from "@/app/hooks/auto";
-import Link from "next/link";
+import React from "react"
+import { useRouter } from "next/navigation"
+import { useAuth } from "../providers/auth"
+import { DashboardLayout } from "@/components/dashboard/layout"
+import { DashboardSidebar } from "@/components/dashboard/sidebar"
+import { DashboardHeader } from "@/components/dashboard/header"
+import { DashboardStats } from "@/components/dashboard/stats"
+import { UserQuickActions } from "@/components/user-quick-actions"
+import {
+  IconDashboard,
+  IconBuilding,
+  IconFolder,
+  IconUser,
+  IconSettings,
+  IconHelp,
+  IconInnerShadowTop,
+} from "@tabler/icons-react"
 
-interface Organization {
-  id: string;
-  name: string;
-  memberCount?: number;
-  createdAt: string;
-}
+const apiFetch = async (url: string) => {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}${url}`, {
+    headers: {
+      'Authorization': token ? `Bearer ${token}` : '',
+      'Content-Type': 'application/json'
+    },
+  });
+  if (!res.ok) throw new Error('Failed to fetch');
+  return res.json();
+};
 
-interface Project {
-  id: string;
-  name: string;
-  status: string;
-  updatedAt: string;
-}
-
-export default function DashboardPage() {
+export default function UserDashboard() {
   const router = useRouter();
-  const { user } = useAuth();
-  
-  // Redirect admins to admin panel
-  if (user?.role === 'admin') {
-    router.push('/admin');
-    return null;
-  }
-  
-  const { 
-    data: organizations, 
-    isLoading: orgsLoading, 
-    error: orgsError 
-  } = useAutoFetch<Organization>(organizationsApi.list, "organizations");
-  
-  const { 
-    data: projects, 
-    isLoading: projectsLoading, 
-    error: projectsError 
-  } = useAutoFetch<Project>(projectsApi.list, "projects");
+  const { user, isAuthenticated } = useAuth();
+  const [organizations, setOrganizations] = React.useState<any[]>([]);
+  const [projects, setProjects] = React.useState<any[]>([]);
+  const [invitations, setInvitations] = React.useState<any[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
 
-  const isLoading = orgsLoading || projectsLoading;
-  const error = orgsError || projectsError;
-  const activeProjectsCount = projects.filter((p: Project) => 
-    p.status?.toLowerCase() === 'active').length;
+  React.useEffect(() => {
+    if (user?.role === 'admin') {
+      router.push('/admin');
+      return;
+    }
+  }, [user, router]);
+
+  React.useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        const [orgsResponse, projectsResponse, invitationsResponse] = await Promise.all([
+          apiFetch('/api/v1/organizations'),
+          apiFetch('/api/v1/projects'),
+          apiFetch('/api/v1/invitations'),
+        ]);
+
+        if (orgsResponse.success && orgsResponse.data.organizations) {
+          setOrganizations(orgsResponse.data.organizations);
+        }
+        if (projectsResponse.success && projectsResponse.data.projects) {
+          setProjects(projectsResponse.data.projects);
+        }
+        if (invitationsResponse.success && invitationsResponse.data.invitations) {
+          setInvitations(invitationsResponse.data.invitations);
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load dashboard');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (isAuthenticated) {
+      fetchData();
+    }
+  }, [isAuthenticated]);
 
   if (isLoading) {
     return (
       <div className="flex min-h-screen w-full flex-col items-center justify-center">
-        <p>Loading dashboard...</p>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>Loading dashboard...</p>
+        </div>
       </div>
     );
   }
@@ -63,200 +91,83 @@ export default function DashboardPage() {
   if (error) {
     return (
       <div className="flex min-h-screen w-full flex-col items-center justify-center">
-        <p className="text-destructive">{error}</p>
-        <Button className="mt-4" onClick={() => router.push("/login")}>
-          Return to Login
-        </Button>
+        <div className="text-center">
+          <p className="text-destructive mb-4">{error}</p>
+          <button onClick={() => window.location.reload()} className="px-4 py-2 bg-primary text-primary-foreground rounded-md">
+            Retry
+          </button>
+        </div>
       </div>
     );
   }
 
+  const activeProjects = projects.filter(p => p.status === 'active').length;
+  const pendingInvitations = invitations.filter(i => i.status === 'pending').length;
+
+  const stats = [
+    {
+      title: "Organizations",
+      value: organizations.length,
+      description: "Your organizations",
+      badge: "Active",
+      footer: "Your organizations",
+      footerDescription: "Teams you're part of",
+    },
+    {
+      title: "Total Projects",
+      value: projects.length,
+      description: "Your projects",
+      badge: "All",
+      footer: "Your projects",
+      footerDescription: "All your projects",
+    },
+    {
+      title: "Active Projects",
+      value: activeProjects,
+      description: "Currently active",
+      badge: "Live",
+      footer: "Currently active",
+      footerDescription: "In-progress projects",
+    },
+    {
+      title: "Invitations",
+      value: pendingInvitations,
+      description: "Pending invitations",
+      badge: "Pending",
+      footer: "Pending invitations",
+      footerDescription: "Review and accept",
+    },
+  ];
+
   return (
-    <div className="flex min-h-screen w-full flex-col">
-      <div className="container flex flex-col gap-6 py-8">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="space-y-1">
-            <h2 className="text-2xl font-bold tracking-tight">
-              Dashboard
-              {user?.role === 'admin' && (
-                <span className="ml-3 text-sm font-normal px-2 py-1 bg-primary text-primary-foreground rounded-md">
-                  Admin
-                </span>
-              )}
-            </h2>
-            <p className="text-muted-foreground">
-              Welcome back{user?.firstName ? `, ${user.firstName}` : ''}! Here's an overview of your platform.
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            {user?.role === 'admin' && (
-              <Button variant="outline" onClick={() => router.push("/admin")}>
-                🛡️ Admin Panel
-              </Button>
-            )}
-            <Button onClick={() => router.push("/projects")}>
-              Create Project
-            </Button>
-          </div>
-        </div>
-        
-        <div className="grid gap-6 md:grid-cols-3">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Organizations</CardTitle>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                className="h-4 w-4 text-muted-foreground"
-              >
-                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-              </svg>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{organizations.length}</div>
-              <p className="text-xs text-muted-foreground">
-                Active organizations
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Projects</CardTitle>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                className="h-4 w-4 text-muted-foreground"
-              >
-                <rect width="20" height="14" x="2" y="5" rx="2" />
-                <path d="M2 10h20" />
-              </svg>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{projects.length}</div>
-              <p className="text-xs text-muted-foreground">
-                Total projects
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Projects</CardTitle>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                className="h-4 w-4 text-muted-foreground"
-              >
-                <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-              </svg>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{activeProjectsCount}</div>
-              <p className="text-xs text-muted-foreground">
-                Currently active
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="grid gap-6 md:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Organizations</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {organizations.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No organizations yet</p>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Members</TableHead>
-                      <TableHead>Created</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {organizations.slice(0, 5).map((org: Organization) => (
-                      <TableRow key={org.id}>
-                        <TableCell>
-                          <Link
-                            href={`/organizations/${org.id}`}
-                            className="font-medium hover:underline"
-                          >
-                            {org.name}
-                          </Link>
-                        </TableCell>
-                        <TableCell>{org.memberCount || 1}</TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {formatRelativeTime(org.createdAt)}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Projects</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {projects.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No projects yet</p>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Updated</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {projects.slice(0, 5).map((project: Project) => (
-                      <TableRow key={project.id}>
-                        <TableCell>
-                          <Link
-                            href={`/projects/${project.id}`}
-                            className="font-medium hover:underline"
-                          >
-                            {project.name}
-                          </Link>
-                        </TableCell>
-                        <TableCell>
-                          <StatusBadge status={project.status} />
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {formatRelativeTime(project.updatedAt)}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    </div>
-  );
+    <DashboardLayout
+      sidebar={
+        <DashboardSidebar
+          title="Platform"
+          titleUrl="/dashboard"
+          icon={<IconInnerShadowTop className="!size-5" />}
+          user={{
+            name: user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : "User",
+            email: user?.email || "user@example.com",
+            avatar: "/avatars/user.jpg",
+          }}
+          navMain={[
+            { title: "Dashboard", url: "/dashboard", icon: IconDashboard },
+            { title: "Organizations", url: "/organizations", icon: IconBuilding },
+            { title: "Projects", url: "/projects", icon: IconFolder },
+            { title: "Profile", url: "/profile", icon: IconUser },
+          ]}
+          navSecondary={[
+            { title: "Settings", url: "/settings", icon: IconSettings },
+            { title: "Help", url: "/help", icon: IconHelp },
+          ]}
+          variant="inset"
+        />
+      }
+      header={<DashboardHeader title="Dashboard" />}
+    >
+      <DashboardStats stats={stats} />
+      <UserQuickActions />
+    </DashboardLayout>
+  )
 }

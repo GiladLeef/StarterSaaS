@@ -46,7 +46,7 @@ go.work
 *.db
 data/uploads
 tmp
-
+design/*
 # Docker
 .dockerignore
 docker-compose.override.yml

@@ -11,6 +11,7 @@ import { useAutoFetch } from "@/app/hooks/auto";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/providers/auth";
 import { useEffect } from "react";
+import { UserDashboardLayout } from "@/components/dashboard/user";
 
 interface Organization {
   id: string;
@@ -31,7 +32,6 @@ export default function OrganizationsPage() {
   const router = useRouter();
   const { user } = useAuth();
 
-  // Redirect admins to admin panel
   useEffect(() => {
     if (user?.role === 'admin') {
       router.push('/admin/resources/organization');
@@ -90,137 +90,137 @@ export default function OrganizationsPage() {
     }
   };
 
-  // Don't render anything for admins while redirecting
   if (user?.role === 'admin') {
     return null;
   }
 
+  const content = (
+    <div className="px-4 lg:px-6">
+      {error && (
+        <div className="bg-destructive/15 p-3 rounded-md text-sm text-destructive mb-4">
+          {error}
+        </div>
+      )}
+
+      <div className="flex flex-col gap-4 mb-6">
+        <CreateDialog
+          title="Create Organization"
+          description="Add a new organization to collaborate with your team."
+          triggerText="Create Organization"
+          fields={[
+            {
+              name: "name",
+              label: "Organization Name",
+              placeholder: "Acme Inc.",
+              required: true,
+            },
+            {
+              name: "description",
+              label: "Description",
+              placeholder: "A brief description of your organization",
+            },
+          ]}
+          isOpen={dialog.isOpen}
+          onOpenChange={dialog.setIsOpen}
+          formData={dialog.formData}
+          onChange={handleNameChange}
+          onSubmit={handleCreate}
+          isSubmitting={dialog.isSubmitting}
+          error={dialog.error}
+        />
+      </div>
+
+      {organizations.length > 0 ? (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {organizations.map((org) => (
+            <Card key={org.id}>
+              <CardHeader>
+                <CardTitle>{org.name}</CardTitle>
+                <CardDescription>
+                  {org.projectCount || 0} {(org.projectCount || 0) === 1 ? "project" : "projects"} •{" "}
+                  {org.memberCount || 0} {(org.memberCount || 0) === 1 ? "member" : "members"}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  {org.description || "No description provided."}
+                </p>
+              </CardContent>
+              <CardFooter className="flex justify-between">
+                <Button variant="outline" size="sm" asChild>
+                  <Link href={`/organizations/${org.id}/settings`}>Manage</Link>
+                </Button>
+                <Button variant="outline" size="sm" asChild>
+                  <Link href={`/organizations/${org.id}/projects`}>View Projects</Link>
+                </Button>
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>No Organizations Yet</CardTitle>
+            <CardDescription>Create your first organization to get started.</CardDescription>
+          </CardHeader>
+          <CardContent className="flex justify-center">
+            <Button onClick={() => dialog.setIsOpen(true)}>
+              Create Your First Organization
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {invitations.length > 0 && (
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle>Organization Invitations</CardTitle>
+            <CardDescription>Organizations you've been invited to join.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {invitations.map((invitation) => (
+                <div key={invitation.id} className="flex items-center justify-between rounded-lg border p-4">
+                  <div>
+                    <h3 className="font-medium">{invitation.organization.name}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Invited by: {invitation.inviter.email}
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDeclineInvitation(invitation.id)}
+                    >
+                      Decline
+                    </Button>
+                    <Button size="sm" onClick={() => handleAcceptInvitation(invitation.id)}>
+                      Accept
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+
   if (isLoading) {
     return (
-      <div className="flex min-h-screen w-full flex-col items-center justify-center">
-        <p>Loading organizations...</p>
-      </div>
+      <UserDashboardLayout user={user} title="Organizations">
+        <div className="flex items-center justify-center p-8">
+          <p>Loading organizations...</p>
+        </div>
+      </UserDashboardLayout>
     );
   }
 
   return (
-    <div className="flex min-h-screen w-full flex-col">
-      <div className="container flex flex-col gap-6 py-8">
-        {error && (
-          <div className="bg-destructive/15 p-3 rounded-md text-sm text-destructive mb-4">
-            {error}
-          </div>
-        )}
-
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="space-y-1">
-            <h2 className="text-2xl font-bold tracking-tight">Organizations</h2>
-            <p className="text-muted-foreground">Manage your organizations and team access.</p>
-          </div>
-
-          <CreateDialog
-            title="Create Organization"
-            description="Add a new organization to collaborate with your team."
-            triggerText="Create Organization"
-            fields={[
-              {
-                name: "name",
-                label: "Organization Name",
-                placeholder: "Acme Inc.",
-                required: true,
-              },
-              {
-                name: "description",
-                label: "Description",
-                placeholder: "A brief description of your organization",
-              },
-            ]}
-            isOpen={dialog.isOpen}
-            onOpenChange={dialog.setIsOpen}
-            formData={dialog.formData}
-            onChange={handleNameChange}
-            onSubmit={handleCreate}
-            isSubmitting={dialog.isSubmitting}
-            error={dialog.error}
-          />
-        </div>
-
-        {organizations.length > 0 ? (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {organizations.map((org) => (
-              <Card key={org.id}>
-                <CardHeader>
-                  <CardTitle>{org.name}</CardTitle>
-                  <CardDescription>
-                    {org.projectCount || 0} {(org.projectCount || 0) === 1 ? "project" : "projects"} •{" "}
-                    {org.memberCount || 0} {(org.memberCount || 0) === 1 ? "member" : "members"}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">
-                    {org.description || "No description provided."}
-                  </p>
-                </CardContent>
-                <CardFooter className="flex justify-between">
-                  <Button variant="outline" size="sm" asChild>
-                    <Link href={`/organizations/${org.id}/settings`}>Manage</Link>
-                  </Button>
-                  <Button variant="outline" size="sm" asChild>
-                    <Link href={`/organizations/${org.id}/projects`}>View Projects</Link>
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <Card>
-            <CardHeader>
-              <CardTitle>No Organizations Yet</CardTitle>
-              <CardDescription>Create your first organization to get started.</CardDescription>
-            </CardHeader>
-            <CardContent className="flex justify-center">
-              <Button onClick={() => dialog.setIsOpen(true)}>
-                Create Your First Organization
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-
-        {invitations.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Organization Invitations</CardTitle>
-              <CardDescription>Organizations you've been invited to join.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {invitations.map((invitation) => (
-                  <div key={invitation.id} className="flex items-center justify-between rounded-lg border p-4">
-                    <div>
-                      <h3 className="font-medium">{invitation.organization.name}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Invited by: {invitation.inviter.email}
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDeclineInvitation(invitation.id)}
-                      >
-                        Decline
-                      </Button>
-                      <Button size="sm" onClick={() => handleAcceptInvitation(invitation.id)}>
-                        Accept
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-    </div>
+    <UserDashboardLayout user={user} title="Organizations">
+      {content}
+    </UserDashboardLayout>
   );
 }

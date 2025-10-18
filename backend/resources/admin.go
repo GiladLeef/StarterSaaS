@@ -1,10 +1,15 @@
 package resources
 
 import (
+	"fmt"
+	"platform/backend/db"
 	"platform/backend/models"
 	"platform/backend/utils"
+	"reflect"
+	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 func init() {
@@ -49,6 +54,70 @@ func GetAdminResourceData(c *gin.Context) {
 			resourceName + "s": items,
 			"metadata":         metadata,
 		})
+	})
+}
+
+func UpdateAdminResource(c *gin.Context) {
+	utils.H(c, func() {
+		utils.RequireAdmin(c)
+		
+		resourceName := c.Param("resource")
+		id := utils.Try(uuid.Parse(c.Param("id")))
+		
+		metadata := utils.GetAdminResource(resourceName)
+		utils.Check(metadata != nil)
+		
+		// Get the existing record
+		existingPtr := reflect.New(metadata.ModelType)
+		utils.TryErr(db.DB.First(existingPtr.Interface(), "id = ?", id).Error)
+		
+		// Bind the update request
+		var updateData map[string]interface{}
+		utils.TryErr(c.ShouldBindJSON(&updateData))
+		
+		// Apply updates using reflection
+		existing := existingPtr.Elem()
+		for key, value := range updateData {
+			if key == "id" || key == "createdAt" || key == "updatedAt" || key == "deletedAt" {
+				continue // Skip system fields
+			}
+			
+			field := existing.FieldByName(strings.Title(key))
+			if field.IsValid() && field.CanSet() {
+				// Convert value to appropriate type
+				val := reflect.ValueOf(value)
+				if val.Type().ConvertibleTo(field.Type()) {
+					field.Set(val.Convert(field.Type()))
+				} else if field.Kind() == reflect.String && val.Kind() != reflect.String {
+					field.SetString(fmt.Sprint(value))
+				}
+			}
+		}
+		
+		// Save the updated record
+		utils.TryErr(db.DB.Save(existingPtr.Interface()).Error)
+		
+		utils.Respond(c, utils.StatusOK, resourceName+" updated successfully", gin.H{
+			resourceName: existingPtr.Interface(),
+		})
+	})
+}
+
+func DeleteAdminResource(c *gin.Context) {
+	utils.H(c, func() {
+		utils.RequireAdmin(c)
+		
+		resourceName := c.Param("resource")
+		id := utils.Try(uuid.Parse(c.Param("id")))
+		
+		metadata := utils.GetAdminResource(resourceName)
+		utils.Check(metadata != nil)
+		
+		// Delete the record
+		recordPtr := reflect.New(metadata.ModelType)
+		utils.TryErr(db.DB.Delete(recordPtr.Interface(), "id = ?", id).Error)
+		
+		utils.Respond(c, utils.StatusOK, resourceName+" deleted successfully", nil)
 	})
 }
 

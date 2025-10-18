@@ -15,6 +15,7 @@ import { LoadingPage } from "@/app/components/ui/loading";
 import { useStatusCounts, useGroupByOrg } from "@/app/hooks/auto";
 import { useAuth } from "@/app/providers/auth";
 import { useEffect } from "react";
+import { UserDashboardLayout } from "@/components/dashboard/user";
 
 interface Organization {
   id: string;
@@ -88,9 +89,9 @@ export default function ProjectsPage() {
   const statusCounts = useStatusCounts(projects);
   const projectsByOrg = useGroupByOrg(projects, organizations);
 
-  return (
-    <div className="flex min-h-screen w-full flex-col">
-      <div className="container flex flex-col gap-6 py-8">
+  const content = (
+    <div className="px-4 lg:px-6">
+      <div className="flex flex-col gap-6">
         {(projectsError || dialog.error) && (
           <div className="bg-destructive/15 p-3 rounded-md text-sm text-destructive mb-4">
             {projectsError || dialog.error}
@@ -240,5 +241,21 @@ export default function ProjectsPage() {
         )}
       </div>
     </div>
+  );
+
+  if (projectsLoading || orgsLoading) {
+    return (
+      <UserDashboardLayout user={user} title="Projects">
+        <div className="flex items-center justify-center p-8">
+          <p>Loading projects...</p>
+        </div>
+      </UserDashboardLayout>
+    );
+  }
+
+  return (
+    <UserDashboardLayout user={user} title="Projects">
+      {content}
+    </UserDashboardLayout>
   );
 }

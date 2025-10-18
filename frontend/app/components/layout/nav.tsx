@@ -28,13 +28,9 @@ const navItems: NavItem[] = [
   { title: "Projects", href: "/projects", requiresAuth: true },
 ];
 
-const adminNavItems: NavItem[] = [
-  { title: "Admin Dashboard", href: "/admin", requiresAuth: true },
-];
+const adminNavItems: NavItem[] = [];
 
-const publicNavItems: NavItem[] = [
-  { title: "Home", href: "/", requiresAuth: false },
-];
+const publicNavItems: NavItem[] = [];
 
 export function MainNav() {
   const pathname = usePathname();

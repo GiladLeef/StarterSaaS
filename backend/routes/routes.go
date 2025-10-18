@@ -70,6 +70,8 @@ func SetupRoutes(r *gin.Engine) {
 			{
 				admin.GET("/resources", resources.GetAdminResources)
 				admin.GET("/resources/:resource", resources.GetAdminResourceData)
+				admin.PUT("/resources/:resource/:id", resources.UpdateAdminResource)
+				admin.DELETE("/resources/:resource/:id", resources.DeleteAdminResource)
 				admin.GET("/stats", resources.GetAdminStats)
 			}
 		}

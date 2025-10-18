@@ -2,22 +2,49 @@
 
 import React from "react";
 import { useParams, useRouter } from "next/navigation";
+import { DashboardLayout } from "@/components/dashboard/layout";
+import { DashboardSidebar } from "@/components/dashboard/sidebar";
+import { DashboardHeader } from "@/components/dashboard/header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { EditDialog } from "@/app/components/admin/edit";
+import {
+  IconDashboard,
+  IconUsers,
+  IconBuilding,
+  IconFolder,
+  IconFileDescription,
+  IconSettings,
+  IconHelp,
+  IconInnerShadowTop,
+} from "@tabler/icons-react";
 
-const apiFetch = async (url: string) => {
+const apiFetch = async (url: string, options?: { method?: string; body?: any }) => {
   const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}${url}`, {
+    method: options?.method || 'GET',
     headers: {
       'Authorization': token ? `Bearer ${token}` : '',
       'Content-Type': 'application/json'
     },
+    body: options?.body ? JSON.stringify(options.body) : undefined,
   });
   if (!res.ok) throw new Error('Failed to fetch');
   return res.json();
 };
+
+function getIconForResource(key: string) {
+  switch (key) {
+    case "user": return IconUsers;
+    case "organization": return IconBuilding;
+    case "project": return IconFolder;
+    case "invitation":
+    case "subscription": return IconFileDescription;
+    default: return IconDashboard;
+  }
+}
 
 export default function ResourceManagementPage() {
   const params = useParams();
@@ -25,9 +52,13 @@ export default function ResourceManagementPage() {
   const resource = params.resource as string;
 
   const [data, setData] = React.useState<any[]>([]);
+  const [resources, setResources] = React.useState<Record<string, any>>({});
+  const [user, setUser] = React.useState<any>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [searchTerm, setSearchTerm] = React.useState("");
+  const [editingItem, setEditingItem] = React.useState<any | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = React.useState(false);
 
   React.useEffect(() => {
     const fetchData = async () => {
@@ -35,136 +66,263 @@ export default function ResourceManagementPage() {
         setIsLoading(true);
         setError(null);
         
-        const response = await apiFetch(`/api/v1/admin/resources/${resource}`);
+        const [dataResponse, resourcesResponse, userResponse] = await Promise.all([
+          apiFetch(`/api/v1/admin/resources/${resource}`),
+          apiFetch('/api/v1/admin/resources'),
+          apiFetch('/api/v1/users/me'),
+        ]);
         
-        if (response.success && response.data) {
-          // Backend returns data as: { users: [...], metadata: {...} }
-          // So we need to access response.data[resourceName + 's']
+        if (dataResponse.success && dataResponse.data) {
           const resourceKey = resource + 's';
-          const items = response.data[resourceKey] || [];
+          const items = dataResponse.data[resourceKey] || [];
           setData(Array.isArray(items) ? items : []);
         }
+
+        if (resourcesResponse.success && resourcesResponse.data.resources) {
+          setResources(resourcesResponse.data.resources);
+        }
+
+        if (userResponse.success && userResponse.data.user) {
+          setUser(userResponse.data.user);
+        }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load resource data');
+        setError(err instanceof Error ? err.message : 'Failed to load data');
       } finally {
         setIsLoading(false);
       }
     };
-    
+
     fetchData();
   }, [resource]);
 
-  const filteredData = React.useMemo(() => {
-    if (!searchTerm) return data;
+  const handleEdit = (item: any) => {
+    setEditingItem(item);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleSaveEdit = async (updatedItem: any) => {
+    try {
+      await apiFetch(`/api/v1/admin/resources/${resource}/${updatedItem.id}`, {
+        method: 'PUT',
+        body: updatedItem,
+      });
+      
+      setData(data.map(item => item.id === updatedItem.id ? updatedItem : item));
+      setIsEditDialogOpen(false);
+      setEditingItem(null);
+    } catch (err) {
+      alert('Failed to update item');
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this item?')) return;
     
-    return data.filter((item) => {
-      const searchLower = searchTerm.toLowerCase();
-      return Object.values(item).some((value) =>
-        String(value).toLowerCase().includes(searchLower)
-      );
-    });
-  }, [data, searchTerm]);
+    try {
+      await apiFetch(`/api/v1/admin/resources/${resource}/${id}`, {
+        method: 'DELETE',
+      });
+      
+      setData(data.filter(item => item.id !== id));
+    } catch (err) {
+      alert('Failed to delete item');
+    }
+  };
+
+  const filteredData = data.filter(item =>
+    Object.values(item).some(value =>
+      String(value).toLowerCase().includes(searchTerm.toLowerCase())
+    )
+  );
+
+  const resourcesArray = Object.entries(resources || {}).map(([key, value]) => ({ key, ...value }));
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen w-full flex-col items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p>Loading {resource} data...</p>
+      <DashboardLayout
+        sidebar={
+          <DashboardSidebar
+            title="Admin Panel"
+            titleUrl="/admin"
+            icon={<IconInnerShadowTop className="!size-5" />}
+            user={{
+              name: "Loading...",
+              email: "loading...",
+              avatar: "/avatars/admin.jpg",
+            }}
+            navMain={[{ title: "Dashboard", url: "/admin", icon: IconDashboard }]}
+            navSecondary={[]}
+            variant="inset"
+          />
+        }
+        header={<DashboardHeader title={`${resource.charAt(0).toUpperCase() + resource.slice(1)}s`} />}
+      >
+        <div className="flex items-center justify-center p-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p>Loading...</p>
+          </div>
         </div>
-      </div>
+      </DashboardLayout>
     );
   }
 
   if (error) {
     return (
-      <div className="flex min-h-screen w-full flex-col items-center justify-center">
-        <div className="text-center">
-          <p className="text-destructive mb-4">{error}</p>
-          <Button onClick={() => window.location.reload()}>Retry</Button>
+      <DashboardLayout
+        sidebar={
+          <DashboardSidebar
+            title="Admin Panel"
+            titleUrl="/admin"
+            icon={<IconInnerShadowTop className="!size-5" />}
+            user={{
+              name: "Error",
+              email: "error",
+              avatar: "/avatars/admin.jpg",
+            }}
+            navMain={[{ title: "Dashboard", url: "/admin", icon: IconDashboard }]}
+            navSecondary={[]}
+            variant="inset"
+          />
+        }
+        header={<DashboardHeader title={`${resource.charAt(0).toUpperCase() + resource.slice(1)}s`} />}
+      >
+        <div className="px-4 lg:px-6">
+          <Card>
+            <CardContent className="p-6">
+              <p className="text-destructive">{error}</p>
+              <Button onClick={() => window.location.reload()} className="mt-4">
+                Retry
+              </Button>
+            </CardContent>
+          </Card>
         </div>
-      </div>
+      </DashboardLayout>
     );
   }
 
-  const resourceName = resource.charAt(0).toUpperCase() + resource.slice(1);
-  const columns = data.length > 0 ? Object.keys(data[0]).filter(key => 
-    !['createdAt', 'updatedAt', 'deletedAt', 'passwordHash'].includes(key)
-  ) : [];
+  const columns = data.length > 0 ? Object.keys(data[0]).filter(key => key !== 'deletedAt') : [];
 
   return (
-    <div className="flex min-h-screen w-full flex-col">
-      <div className="container flex flex-col gap-6 py-8">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="space-y-1">
-            <h2 className="text-2xl font-bold tracking-tight">Manage {resourceName}s</h2>
-            <p className="text-muted-foreground">
-              View and manage all {resource}s in the system.
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => router.push('/admin')}>
-              Back to Admin
-            </Button>
-          </div>
-        </div>
-
+    <DashboardLayout
+      sidebar={
+        <DashboardSidebar
+          title="Admin Panel"
+          titleUrl="/admin"
+          icon={<IconInnerShadowTop className="!size-5" />}
+          user={{
+            name: user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : "Admin",
+            email: user?.email || "admin@example.com",
+            avatar: "/avatars/admin.jpg",
+          }}
+          navMain={[
+            { title: "Dashboard", url: "/admin", icon: IconDashboard },
+            ...resourcesArray.map((r: any) => ({
+              title: r.pluralName || r.name,
+              url: `/admin/resources/${r.key}`,
+              icon: getIconForResource(r.key),
+            })),
+          ]}
+          navSecondary={[
+            { title: "Settings", url: "/admin/settings", icon: IconSettings },
+            { title: "Help", url: "/admin/help", icon: IconHelp },
+          ]}
+          variant="inset"
+        />
+      }
+      header={
+        <DashboardHeader 
+          title={`Manage ${resource.charAt(0).toUpperCase() + resource.slice(1)}s`}
+        />
+      }
+    >
+      <div className="px-4 lg:px-6">
         <Card>
           <CardHeader>
-            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-              <div>
-                <CardTitle>{resourceName}s</CardTitle>
-                <CardDescription>
-                  Total: {data.length} {resource}s
-                </CardDescription>
-              </div>
-              <div className="w-full md:w-64">
-                <Input
-                  placeholder={`Search ${resource}s...`}
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-            </div>
+            <CardTitle className="capitalize">{resource}s</CardTitle>
+            <CardDescription>
+              Manage all {resource}s in the system
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            {filteredData.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                {searchTerm ? `No ${resource}s match your search.` : `No ${resource}s found.`}
-              </div>
-            ) : (
-              <div className="rounded-md border overflow-x-auto">
-                <Table>
-                  <TableHeader>
+            <div className="mb-4">
+              <Input
+                placeholder="Search..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="max-w-sm"
+              />
+            </div>
+            
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    {columns.map((column) => (
+                      <TableHead key={column} className="capitalize">
+                        {column}
+                      </TableHead>
+                    ))}
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredData.length === 0 ? (
                     <TableRow>
-                      {columns.map((column) => (
-                        <TableHead key={column} className="capitalize">
-                          {column.replace(/([A-Z])/g, ' $1').trim()}
-                        </TableHead>
-                      ))}
+                      <TableCell colSpan={columns.length + 1} className="text-center">
+                        No data found
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredData.map((item, index) => (
-                      <TableRow key={item.id || index}>
+                  ) : (
+                    filteredData.map((item) => (
+                      <TableRow key={item.id}>
                         {columns.map((column) => (
                           <TableCell key={column}>
-                            {typeof item[column] === 'boolean'
-                              ? item[column] ? 'Yes' : 'No'
-                              : typeof item[column] === 'object' && item[column] !== null
+                            {typeof item[column] === 'object' && item[column] !== null
                               ? JSON.stringify(item[column])
-                              : String(item[column] ?? '-')}
+                              : String(item[column] ?? '')}
                           </TableCell>
                         ))}
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEdit(item)}
+                            >
+                              Edit
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDelete(item.id)}
+                            >
+                              Delete
+                            </Button>
+                          </div>
+                        </TableCell>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
       </div>
-    </div>
+
+      {editingItem && (
+        <EditDialog
+          isOpen={isEditDialogOpen}
+          onClose={() => {
+            setIsEditDialogOpen(false);
+            setEditingItem(null);
+          }}
+          onSave={handleSaveEdit}
+          item={editingItem}
+          resourceName={resource}
+        />
+      )}
+    </DashboardLayout>
   );
 }
