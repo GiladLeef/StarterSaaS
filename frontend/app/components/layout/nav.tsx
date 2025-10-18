@@ -47,8 +47,8 @@ export function MainNav() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background">
-      <div className="mx-auto max-w-7xl w-full px-4 sm:px-6 lg:px-8 flex h-16 items-center justify-between">
+    <header className="sticky top-0 z-50 w-full border-b border-gray-200 bg-white">
+      <div className="mx-auto max-w-7xl w-full px-6 flex h-16 items-center justify-between">
         <div className="flex items-center">
           <Link 
             href={
@@ -56,12 +56,12 @@ export function MainNav() {
                 ? (user?.role === 'admin' ? '/admin' : '/dashboard')
                 : '/'
             } 
-            className="mr-6 flex items-center space-x-2 font-bold"
+            className="mr-6 flex items-center space-x-2 font-serif text-xl text-black"
           >
-            <span>Platform</span>
+            <span>StarterSaaS</span>
           </Link>
 
-          <nav className="hidden md:flex items-center space-x-6 text-sm font-medium">
+          <nav className="hidden md:flex items-center space-x-8 text-sm">
             {(isAuthenticated 
               ? (user?.role === 'admin' ? adminNavItems : navItems)
               : publicNavItems
@@ -70,10 +70,10 @@ export function MainNav() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "transition-colors hover:text-foreground/80",
+                  "transition-colors",
                   pathname === item.href || pathname?.startsWith(item.href + "/")
-                    ? "text-foreground font-semibold"
-                    : "text-foreground/60"
+                    ? "text-black font-semibold"
+                    : "text-gray-600 hover:text-black"
                 )}
               >
                 {item.title}
@@ -134,11 +134,18 @@ export function MainNav() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <nav className="flex items-center space-x-4">
-              <Link href="/login" className="text-sm font-medium">
-                Sign in
-              </Link>
-              <Button asChild size="sm">
+            <nav className="flex items-center gap-4">
+              <Button 
+                variant="ghost" 
+                className="text-black hover:bg-gray-100"
+                asChild
+              >
+                <Link href="/login">Log in</Link>
+              </Button>
+              <Button 
+                className="bg-black text-white hover:bg-gray-800 rounded-full"
+                asChild
+              >
                 <Link href="/register">Sign up</Link>
               </Button>
             </nav>
