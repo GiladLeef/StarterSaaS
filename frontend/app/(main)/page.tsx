@@ -1,450 +1,280 @@
-"use client";
+"use client"
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '../providers/auth';
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import AnimatedLines from '../components/animated/lines';
-import AnimatedLine from '../components/animated/line';
-import Link from 'next/link';
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { useAuth } from '../providers/auth'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import AnimatedLines from '../components/animated/lines'
+import AnimatedLine from '../components/animated/line'
+import { 
+  IconRocket, 
+  IconShield, 
+  IconBolt, 
+  IconCloud,
+  IconCode,
+  IconUsers,
+  IconChartBar,
+  IconLock,
+  IconArrowRight,
+  IconCheck,
+  IconSparkles
+} from '@tabler/icons-react'
 
-export default function Home() {
-  const router = useRouter();
-  const { isAuthenticated, user } = useAuth();
-  const [activeTab, setActiveTab] = useState('auth');
+export default function HomePage() {
+  const { isAuthenticated, user } = useAuth()
+  const router = useRouter()
 
   useEffect(() => {
     if (isAuthenticated && user) {
       if (user.role === 'admin') {
-        router.push('/admin');
+        router.push('/admin')
       } else {
-        router.push('/dashboard');
+        router.push('/dashboard')
       }
     }
-  }, [isAuthenticated, user, router]);
+  }, [isAuthenticated, user, router])
 
   if (isAuthenticated) {
-    return null;
+    return null
   }
 
   const features = [
     {
-      icon: "🔐",
-      title: 'Authentication System',
-      description: 'Complete JWT-based auth with password reset, email verification, and secure token management',
+      icon: IconRocket,
+      title: "Lightning Fast",
+      description: "Built with performance in mind. Experience blazing-fast load times and smooth interactions.",
+      gradient: "from-blue-500 to-cyan-500"
     },
     {
-      icon: "🏢",
-      title: 'Multi-Tenant Organizations',
-      description: 'Team management with invitations, member roles, and organization-level resource isolation',
+      icon: IconShield,
+      title: "Enterprise Security",
+      description: "Bank-level encryption and security protocols to keep your data safe and compliant.",
+      gradient: "from-purple-500 to-pink-500"
     },
     {
-      icon: "📊",
-      title: 'Project Management',
-      description: 'Full project lifecycle with status tracking, organization linkage, and automated workflows',
+      icon: IconBolt,
+      title: "Real-time Sync",
+      description: "Instant updates across all your devices. Always stay in sync with your team.",
+      gradient: "from-orange-500 to-red-500"
     },
     {
-      icon: "🛡️",
-      title: 'Admin Dashboard',
-      description: 'Auto-generated admin panel with CRUD operations, search, and real-time data management',
+      icon: IconCloud,
+      title: "Cloud Native",
+      description: "Scalable infrastructure that grows with your business. No limits, no compromises.",
+      gradient: "from-green-500 to-emerald-500"
     },
-  ];
+    {
+      icon: IconCode,
+      title: "Developer Friendly",
+      description: "Clean APIs and extensive documentation. Integrate seamlessly with your workflow.",
+      gradient: "from-indigo-500 to-purple-500"
+    },
+    {
+      icon: IconUsers,
+      title: "Team Collaboration",
+      description: "Work together effortlessly. Share, comment, and collaborate in real-time.",
+      gradient: "from-pink-500 to-rose-500"
+    }
+  ]
 
-  const techStack = [
-    { name: 'Go', desc: 'Backend' },
-    { name: 'PostgreSQL', desc: 'Database' },
-    { name: 'Next.js', desc: 'Frontend' },
-    { name: 'React', desc: 'UI' },
-    { name: 'Docker', desc: 'Containers' },
-    { name: 'GORM', desc: 'ORM' },
-  ];
+  const benefits = [
+    "Advanced analytics and reporting",
+    "24/7 customer support",
+    "99.9% uptime guarantee",
+    "SOC 2 Type II compliant",
+    "Custom integrations",
+    "Dedicated success manager"
+  ]
+
+  const stats = [
+    { value: "10K+", label: "Active Users" },
+    { value: "99.9%", label: "Uptime" },
+    { value: "24/7", label: "Support" },
+    { value: "50+", label: "Integrations" }
+  ]
 
   return (
     <div className="min-h-screen relative">
       <AnimatedLines />
+      
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
-        <div 
-          className="absolute inset-0 opacity-[0.03]"
-          style={{
-            backgroundImage: `linear-gradient(hsl(var(--foreground)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--foreground)) 1px, transparent 1px)`,
-            backgroundSize: '100px 100px'
-          }}
-        />
-
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-foreground/10 mb-8 transition-all duration-300">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              className="w-4 h-4"
-            >
-              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-            </svg>
-            <span className="text-sm font-medium">
-              Fully Automated SaaS Platform
-            </span>
-          </div>
-
-          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight mb-6">
-            <span className="block">
-              Build Your SaaS Platform
-            </span>
-            <span className="block mt-2 text-2xl sm:text-3xl lg:text-4xl">
-              With 100% Automation Built In
-            </span>
+        <div className="container px-4 mx-auto text-center relative z-10">
+          <Badge variant="secondary" className="mb-8 px-4 py-2">
+            <IconSparkles className="w-4 h-4 mr-2 inline" />
+            New: AI-powered insights now available
+          </Badge>
+          
+          <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600">
+            Build Faster,
+            <br />
+            Scale Smarter
           </h1>
-
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-10">
-            Production-ready platform with authentication, organizations, projects, subscriptions, and admin panel. DRY principles and generic code throughout.
+          
+          <div className="relative inline-block mb-8">
+            <AnimatedLine direction="horizontal" length={200} />
+          </div>
+          
+          <p className="text-xl md:text-2xl text-muted-foreground mb-12 max-w-3xl mx-auto">
+            The all-in-one platform for modern teams. Manage projects, collaborate seamlessly, 
+            and scale your business with confidence.
           </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
-            <Link href="/register">
-              <Button size="lg" className="group hover:shadow-lg transition-all duration-300">
+          
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
+            <Button size="lg" className="text-lg px-8 py-6 group" asChild>
+              <a href="/register">
                 Get Started Free
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform"
-                >
-                  <path d="M5 12h14M12 5l7 7-7 7" />
-                </svg>
-              </Button>
-            </Link>
-            <Link href="/login">
-              <Button size="lg" variant="outline" className="hover:shadow-md transition-all duration-300">
-                Sign In
-              </Button>
-            </Link>
-          </div>
-
-          <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
-            <div className="text-center">
-              <div className="relative mb-4">
-                <div className="w-15 h-0.5 bg-foreground/20 mx-auto"></div>
-              </div>
-              <div className="text-2xl md:text-3xl font-bold mb-1">100%</div>
-              <div className="text-xs md:text-sm text-muted-foreground">Automated</div>
-            </div>
-            <div className="text-center">
-              <div className="relative mb-4">
-                <div className="w-15 h-0.5 bg-foreground/20 mx-auto"></div>
-              </div>
-              <div className="text-2xl md:text-3xl font-bold mb-1">DRY</div>
-              <div className="text-xs md:text-sm text-muted-foreground">Code Principles</div>
-            </div>
-            <div className="text-center">
-              <div className="relative mb-4">
-                <div className="w-15 h-0.5 bg-foreground/20 mx-auto"></div>
-              </div>
-              <div className="text-2xl md:text-3xl font-bold mb-1">REST</div>
-              <div className="text-xs md:text-sm text-muted-foreground">API Backend</div>
-            </div>
-            <div className="text-center">
-              <div className="relative mb-4">
-                <div className="w-15 h-0.5 bg-foreground/20 mx-auto"></div>
-              </div>
-              <div className="text-2xl md:text-3xl font-bold mb-1">Open</div>
-              <div className="text-xs md:text-sm text-muted-foreground">Source Ready</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section (Workflow Style) */}
-      <section className="py-20 bg-muted/30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4">
-              Complete SaaS Foundation
-            </h2>
-            <p className="text-xl text-muted-foreground">
-              Everything you need to build and scale your SaaS product
-            </p>
-            <div className="mt-8 flex justify-center">
-              <AnimatedLine 
-                direction="horizontal" 
-                length={120} 
-                thickness={3} 
-                color="hsl(var(--primary))" 
-                delay={400}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {features.map((feature, index) => (
-              <div key={feature.title} className="relative group">
-                <Card className="p-8 h-full bg-white/80 backdrop-blur-sm border border-slate-200 hover:shadow-xl hover:shadow-primary/10 transition-all duration-300 hover:border-primary/30">
-                  <div className="w-16 h-16 bg-muted/50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-primary/10 transition-colors duration-300">
-                    <span className="text-3xl">{feature.icon}</span>
-                  </div>
-                  <h3 className="text-xl font-semibold mb-3 group-hover:text-primary transition-colors duration-300">{feature.title}</h3>
-                  <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
-                  
-                  {/* Animated line on hover */}
-                  <div className="mt-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <AnimatedLine 
-                      direction="horizontal" 
-                      length={40} 
-                      thickness={2} 
-                      color="hsl(var(--primary))" 
-                      delay={0}
-                    />
-                  </div>
-                </Card>
-                {index < features.length - 1 && (
-                  <div className="hidden lg:block absolute top-1/2 -right-9 transform -translate-y-1/2">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      className="w-6 h-6 text-foreground/20"
-                    >
-                      <path d="M5 12h14M12 5l7 7-7 7" />
-                    </svg>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Features Tabs Section (Automated Actions Style) */}
-      <section className="py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4">
-              Platform Features
-            </h2>
-            <p className="text-xl text-muted-foreground">
-              Built-in functionality to accelerate your development
-            </p>
-          </div>
-
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-4 mb-8">
-              <TabsTrigger value="auth">Authentication</TabsTrigger>
-              <TabsTrigger value="orgs">Organizations</TabsTrigger>
-              <TabsTrigger value="admin">Admin Panel</TabsTrigger>
-              <TabsTrigger value="api">API</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="auth" className="mt-0">
-              <Card className="p-8">
-                <div className="grid md:grid-cols-2 gap-8">
-                  <div>
-                    <h3 className="text-2xl font-semibold mb-4">Complete Authentication</h3>
-                    <p className="text-muted-foreground mb-6">
-                      JWT-based authentication with password reset, email verification, and role-based access control built in.
-                    </p>
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-primary" />
-                        <span className="text-sm">Secure JWT tokens</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-primary" />
-                        <span className="text-sm">Password reset flow</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-primary" />
-                        <span className="text-sm">Role-based permissions</span>
-                      </div>
-                    </div>
-                  </div>
-                  <Card className="p-4 bg-muted/30 font-mono text-sm">
-                    <div className="text-primary mb-2">POST /api/v1/auth/register</div>
-                    <div className="text-muted-foreground">Creating user account...</div>
-                    <div className="text-foreground">• User created successfully</div>
-                    <div className="text-muted-foreground">• JWT token generated</div>
-                    <div className="text-muted-foreground">• Welcome email sent</div>
-                  </Card>
-                </div>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="orgs" className="mt-0">
-              <Card className="p-8">
-                <div className="grid md:grid-cols-2 gap-8">
-                  <div>
-                    <h3 className="text-2xl font-semibold mb-4">Multi-Tenant Organizations</h3>
-                    <p className="text-muted-foreground mb-6">
-                      Create organizations, invite team members, and manage projects with full isolation and access control.
-                    </p>
-                    <Link href="/register">
-                      <Button>Create Organization</Button>
-                    </Link>
-                  </div>
-                  <Card className="p-4 bg-muted/30">
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between border-b border-foreground/10 pb-2">
-                        <span>Member Invitations</span>
-                        <span>✓</span>
-                      </div>
-                      <div className="flex justify-between border-b border-foreground/10 pb-2">
-                        <span>Role Management</span>
-                        <span>✓</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Resource Isolation</span>
-                        <span>✓</span>
-                      </div>
-                    </div>
-                  </Card>
-                </div>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="admin" className="mt-0">
-              <Card className="p-8">
-                <div className="grid md:grid-cols-2 gap-8">
-                  <div>
-                    <h3 className="text-2xl font-semibold mb-4">Automated Admin Panel</h3>
-                    <p className="text-muted-foreground mb-6">
-                      Fully auto-generated admin dashboard with CRUD operations, search, and data management for all resources.
-                    </p>
-                  </div>
-                  <div className="space-y-3">
-                    <Card className="p-4 border-l-2 border-l-foreground">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <div className="font-semibold">Users Management</div>
-                          <div className="text-sm text-muted-foreground">View, edit, delete users</div>
-                        </div>
-                      </div>
-                    </Card>
-                    <Card className="p-4 border-l-2 border-l-foreground/40">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <div className="font-semibold">Organizations & Projects</div>
-                          <div className="text-sm text-muted-foreground">Manage all resources</div>
-                        </div>
-                      </div>
-                    </Card>
-                  </div>
-                </div>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="api" className="mt-0">
-              <Card className="p-8">
-                <div className="grid md:grid-cols-2 gap-8">
-                  <div>
-                    <h3 className="text-2xl font-semibold mb-4">RESTful API</h3>
-                    <p className="text-muted-foreground mb-6">
-                      Complete REST API with automatic route generation, validation, and error handling.
-                    </p>
-                    <Button variant="outline">View Documentation</Button>
-                  </div>
-                  <Card className="p-4 bg-muted/30 font-mono text-sm overflow-x-auto">
-                    <pre className="text-xs">
-{`GET /api/v1/organizations
-{
-  "success": true,
-  "data": {
-    "organizations": [...]
-  }
-}`}
-                    </pre>
-                  </Card>
-                </div>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </div>
-      </section>
-
-      {/* Tech Stack Section (Integrations Style) */}
-      <section className="py-20 bg-background">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4">
-              Modern Tech Stack
-            </h2>
-            <p className="text-xl text-muted-foreground">
-              Built with industry-leading technologies
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
-            {techStack.map((tech) => (
-              <Card
-                key={tech.name}
-                className="p-6 flex flex-col items-center justify-center gap-3 hover:border-foreground/30 transition-all duration-300 border-foreground/10"
-              >
-                <span className="text-xl font-bold">{tech.name}</span>
-                <span className="text-sm font-medium text-muted-foreground">{tech.desc}</span>
-              </Card>
-            ))}
-          </div>
-
-          <div className="mt-12 text-center">
-            <Card className="inline-flex items-center gap-2 px-6 py-3 border-foreground/20">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                className="w-5 h-5"
-              >
-                <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" />
-              </svg>
-              <span className="text-sm">
-                Docker-ready with PostgreSQL and automated migrations
-              </span>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* Final CTA Section */}
-      <section className="py-20 bg-muted/30">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4">Ready to Build?</h2>
-          <p className="text-xl text-muted-foreground mb-8">
-            Start your project with the most automated SaaS platform
-          </p>
-          <Link href="/register">
-            <Button size="lg" className="group hover:shadow-lg transition-all duration-300">
-              Create Your Account
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform"
-              >
-                <path d="M5 12h14M12 5l7 7-7 7" />
-              </svg>
+                <IconArrowRight className="ml-2 w-5 h-5 transition-transform group-hover:translate-x-1" />
+              </a>
             </Button>
-          </Link>
+            <Button size="lg" variant="outline" className="text-lg px-8 py-6" asChild>
+              <a href="/login">Sign In</a>
+            </Button>
+          </div>
+
+          {/* Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto">
+            {stats.map((stat, idx) => (
+              <div key={idx} className="text-center">
+                <div className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
+                  {stat.value}
+                </div>
+                <div className="text-sm text-muted-foreground mt-2">{stat.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Floating gradient orbs */}
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+      </section>
+
+      {/* Features Section */}
+      <section className="py-32 relative">
+        <div className="container px-4 mx-auto">
+          <div className="text-center mb-20">
+            <Badge variant="outline" className="mb-4">Features</Badge>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">
+              Everything you need to succeed
+            </h2>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              Powerful features designed to help your team work smarter, not harder.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {features.map((feature, idx) => (
+                <Card 
+                key={idx} 
+                className="relative group border-2 transition-all duration-300 hover:shadow-2xl hover:border-primary/50"
+              >
+                <CardHeader>
+                  <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center mb-4 shadow-lg`}>
+                    <feature.icon className="w-7 h-7 text-white" />
+                  </div>
+                  <CardTitle className="text-2xl">{feature.title}</CardTitle>
+                  <CardDescription className="text-base">{feature.description}</CardDescription>
+                </CardHeader>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Benefits Section */}
+      <section className="py-32 bg-muted/30 relative">
+        <div className="container px-4 mx-auto">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+            <div>
+              <Badge variant="outline" className="mb-4">Enterprise Ready</Badge>
+              <h2 className="text-4xl md:text-5xl font-bold mb-6">
+                Built for teams of all sizes
+              </h2>
+              <p className="text-xl text-muted-foreground mb-8">
+                From startups to enterprises, our platform scales with your needs. 
+                Get the tools and support you need to grow.
+              </p>
+              
+              <div className="space-y-4">
+                {benefits.map((benefit, idx) => (
+                  <div key={idx} className="flex items-center gap-3">
+                    <div className="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
+                      <IconCheck className="w-4 h-4 text-green-600" />
+                    </div>
+                    <span className="text-lg">{benefit}</span>
+                  </div>
+                ))}
+              </div>
+
+              <Button size="lg" className="mt-8 group" asChild>
+                <a href="/register">
+                  Start Free Trial
+                  <IconArrowRight className="ml-2 w-5 h-5 transition-transform group-hover:translate-x-1" />
+                </a>
+              </Button>
+            </div>
+
+            <div className="relative">
+              <div className="grid grid-cols-2 gap-4">
+                <Card className="p-6 bg-gradient-to-br from-blue-500/10 to-purple-500/10">
+                  <IconChartBar className="w-8 h-8 mb-4 text-blue-600" />
+                  <h3 className="font-semibold mb-2">Analytics</h3>
+                  <p className="text-sm text-muted-foreground">Deep insights into your business</p>
+                </Card>
+                <Card className="p-6 bg-gradient-to-br from-purple-500/10 to-pink-500/10 mt-8">
+                  <IconLock className="w-8 h-8 mb-4 text-purple-600" />
+                  <h3 className="font-semibold mb-2">Security</h3>
+                  <p className="text-sm text-muted-foreground">Enterprise-grade protection</p>
+                </Card>
+                <Card className="p-6 bg-gradient-to-br from-green-500/10 to-emerald-500/10">
+                  <IconUsers className="w-8 h-8 mb-4 text-green-600" />
+                  <h3 className="font-semibold mb-2">Collaboration</h3>
+                  <p className="text-sm text-muted-foreground">Work together seamlessly</p>
+                </Card>
+                <Card className="p-6 bg-gradient-to-br from-orange-500/10 to-red-500/10 mt-8">
+                  <IconCloud className="w-8 h-8 mb-4 text-orange-600" />
+                  <h3 className="font-semibold mb-2">Cloud Native</h3>
+                  <p className="text-sm text-muted-foreground">Scale without limits</p>
+                </Card>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-32 relative">
+        <div className="container px-4 mx-auto">
+          <Card className="relative overflow-hidden border-2">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-pink-500/10"></div>
+            <CardContent className="relative z-10 py-20 text-center">
+              <h2 className="text-4xl md:text-5xl font-bold mb-6">
+                Ready to get started?
+              </h2>
+              <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+                Join thousands of teams already using our platform to build better products faster.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button size="lg" className="text-lg px-8 py-6 group" asChild>
+                  <a href="/register">
+                    Start Free Trial
+                    <IconArrowRight className="ml-2 w-5 h-5 transition-transform group-hover:translate-x-1" />
+                  </a>
+                </Button>
+                <Button size="lg" variant="outline" className="text-lg px-8 py-6" asChild>
+                  <a href="/login">Talk to Sales</a>
+                </Button>
+              </div>
+              <p className="text-sm text-muted-foreground mt-6">
+                No credit card required • 14-day free trial • Cancel anytime
+              </p>
+            </CardContent>
+          </Card>
         </div>
       </section>
     </div>
-  );
+  )
 }

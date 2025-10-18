@@ -12,9 +12,7 @@ import { IconArrowRight } from "@tabler/icons-react"
 interface AdminResourcesProps {
   resources: Array<{
     key: string
-    name: string
-    pluralName: string
-    capabilities: string[]
+    [key: string]: any
   }>
 }
 
@@ -36,20 +34,20 @@ export function AdminResources({ resources }: AdminResourcesProps) {
                   <CardHeader>
                     <CardTitle className="text-base flex items-center justify-between">
                       <span className="capitalize">
-                        {resource.pluralName || resource.name}
+                        {resource.pluralName || resource.name || resource.key}
                       </span>
                       <IconArrowRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-1" />
                     </CardTitle>
                     <CardDescription>
                       <div className="flex flex-wrap gap-1 mt-2">
-                        {resource.capabilities.slice(0, 4).map((cap: string) => (
+                        {(resource.capabilities || []).slice(0, 4).map((cap: string) => (
                           <Badge key={cap} variant="secondary" className="text-xs">
                             {cap}
                           </Badge>
                         ))}
-                        {resource.capabilities.length > 4 && (
+                        {(resource.capabilities || []).length > 4 && (
                           <Badge variant="outline" className="text-xs">
-                            +{resource.capabilities.length - 4}
+                            +{(resource.capabilities || []).length - 4}
                           </Badge>
                         )}
                       </div>
