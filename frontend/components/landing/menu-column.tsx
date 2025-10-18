@@ -26,7 +26,7 @@ export function MenuColumn({ title, items, variant = 'icon' }: MenuColumnProps) 
   if (variant === 'simple') {
     return (
       <div>
-        <h3 className="text-sm font-semibold text-black mb-4 uppercase tracking-wider">{title}</h3>
+        <h3 className="text-sm font-sans font-semibold text-black mb-4 uppercase tracking-wider">{title}</h3>
         <ul className="space-y-3">
           {items.map((item, idx) => (
             <li key={idx}>
@@ -45,7 +45,7 @@ export function MenuColumn({ title, items, variant = 'icon' }: MenuColumnProps) 
 
   return (
     <div>
-      <h3 className="text-sm font-semibold text-black mb-4 uppercase tracking-wider">{title}</h3>
+      <h3 className="text-sm font-sans font-semibold text-black mb-4 uppercase tracking-wider">{title}</h3>
       <ul className="space-y-3">
         {items.map((item, idx) => {
           if (isIconItem(item)) {
