@@ -7,7 +7,9 @@ import { DashboardLayout } from "@/components/dashboard/layout"
 import { DashboardSidebar } from "@/components/dashboard/sidebar"
 import { DashboardHeader } from "@/components/dashboard/header"
 import { DashboardStats } from "@/components/dashboard/stats"
+import { DashboardPage } from "@/components/dashboard/page"
 import { UserQuickActions } from "@/components/user-quick-actions"
+import { useResource } from "@/hooks/use-resource"
 import {
   IconDashboard,
   IconBuilding,
@@ -18,91 +20,33 @@ import {
   IconInnerShadowTop,
 } from "@tabler/icons-react"
 
-const apiFetch = async (url: string) => {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}${url}`, {
-    headers: {
-      'Authorization': token ? `Bearer ${token}` : '',
-      'Content-Type': 'application/json'
-    },
-  });
-  if (!res.ok) throw new Error('Failed to fetch');
-  return res.json();
-};
-
 export default function UserDashboard() {
-  const router = useRouter();
-  const { user, isAuthenticated } = useAuth();
-  const [organizations, setOrganizations] = React.useState<any[]>([]);
-  const [projects, setProjects] = React.useState<any[]>([]);
-  const [invitations, setInvitations] = React.useState<any[]>([]);
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
+  const router = useRouter()
+  const { user } = useAuth()
+  
+  const { data: organizations, isLoading: orgsLoading, error: orgsError } = useResource({
+    endpoint: '/api/v1/organizations',
+    dataKey: 'organizations',
+  })
+  
+  const { data: projects, isLoading: projectsLoading, error: projectsError } = useResource({
+    endpoint: '/api/v1/projects',
+    dataKey: 'projects',
+  })
+  
+  const { data: invitations, isLoading: invitationsLoading, error: invitationsError } = useResource({
+    endpoint: '/api/v1/invitations',
+    dataKey: 'invitations',
+  })
 
   React.useEffect(() => {
     if (user?.role === 'admin') {
-      router.push('/admin');
-      return;
+      router.push('/admin')
     }
-  }, [user, router]);
+  }, [user, router])
 
-  React.useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setIsLoading(true);
-        const [orgsResponse, projectsResponse, invitationsResponse] = await Promise.all([
-          apiFetch('/api/v1/organizations'),
-          apiFetch('/api/v1/projects'),
-          apiFetch('/api/v1/invitations'),
-        ]);
-
-        if (orgsResponse.success && orgsResponse.data.organizations) {
-          setOrganizations(orgsResponse.data.organizations);
-        }
-        if (projectsResponse.success && projectsResponse.data.projects) {
-          setProjects(projectsResponse.data.projects);
-        }
-        if (invitationsResponse.success && invitationsResponse.data.invitations) {
-          setInvitations(invitationsResponse.data.invitations);
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load dashboard');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (isAuthenticated) {
-      fetchData();
-    }
-  }, [isAuthenticated]);
-
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen w-full flex-col items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p>Loading dashboard...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex min-h-screen w-full flex-col items-center justify-center">
-        <div className="text-center">
-          <p className="text-destructive mb-4">{error}</p>
-          <button onClick={() => window.location.reload()} className="px-4 py-2 bg-primary text-primary-foreground rounded-md">
-            Retry
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  const activeProjects = projects.filter(p => p.status === 'active').length;
-  const pendingInvitations = invitations.filter(i => i.status === 'pending').length;
+  const activeProjects = projects.filter((p: any) => p.status === 'active').length
+  const pendingInvitations = invitations.filter((i: any) => i.status === 'pending').length
 
   const stats = [
     {
@@ -137,37 +81,52 @@ export default function UserDashboard() {
       footer: "Pending invitations",
       footerDescription: "Review and accept",
     },
-  ];
+  ]
+
+  const navItems = [
+    { title: "Dashboard", url: "/dashboard", icon: IconDashboard },
+    { title: "Organizations", url: "/organizations", icon: IconBuilding },
+    { title: "Projects", url: "/projects", icon: IconFolder },
+    { title: "Profile", url: "/profile", icon: IconUser },
+  ]
+
+  const secondaryNavItems = [
+    { title: "Settings", url: "/settings", icon: IconSettings },
+    { title: "Help", url: "/help", icon: IconHelp },
+  ]
 
   return (
-    <DashboardLayout
-      sidebar={
-        <DashboardSidebar
-          title="Platform"
-          titleUrl="/dashboard"
-          icon={<IconInnerShadowTop className="!size-5" />}
-          user={{
-            name: user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : "User",
-            email: user?.email || "user@example.com",
-            avatar: "/avatars/user.jpg",
-          }}
-          navMain={[
-            { title: "Dashboard", url: "/dashboard", icon: IconDashboard },
-            { title: "Organizations", url: "/organizations", icon: IconBuilding },
-            { title: "Projects", url: "/projects", icon: IconFolder },
-            { title: "Profile", url: "/profile", icon: IconUser },
-          ]}
-          navSecondary={[
-            { title: "Settings", url: "/settings", icon: IconSettings },
-            { title: "Help", url: "/help", icon: IconHelp },
-          ]}
-          variant="inset"
-        />
-      }
-      header={<DashboardHeader title="Dashboard" />}
+    <DashboardPage
+      layout={(props) => (
+        <DashboardLayout
+          sidebar={
+            <DashboardSidebar
+              title="Platform"
+              titleUrl="/dashboard"
+              icon={<IconInnerShadowTop className="!size-5" />}
+              user={{
+                name: user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : "User",
+                email: user?.email || "user@example.com",
+                avatar: "/avatars/user.jpg",
+              }}
+              navMain={navItems}
+              navSecondary={secondaryNavItems}
+              variant="inset"
+            />
+          }
+          header={<DashboardHeader title={props.title} />}
+        >
+          {props.children}
+        </DashboardLayout>
+      )}
+      title="Dashboard"
+      user={user}
+      isLoading={orgsLoading || projectsLoading || invitationsLoading}
+      error={orgsError || projectsError || invitationsError}
+      redirectAdmins={true}
     >
       <DashboardStats stats={stats} />
       <UserQuickActions />
-    </DashboardLayout>
+    </DashboardPage>
   )
 }

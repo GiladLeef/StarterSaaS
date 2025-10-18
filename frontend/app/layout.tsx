@@ -1,25 +1,25 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
-import { cn } from "@/lib/utils";
 import { AuthProvider } from "./providers/auth";
 import ProtectedRoute from "./components/layout/protected";
-import { MainNav } from "./components/layout/nav";
-import { Footer } from "./components/footer";
+import { cn } from "@/lib/utils";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
   subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const playfair = Playfair_Display({
   subsets: ["latin"],
+  variable: "--font-serif",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Platform",
-  description: "Your complete platform solution",
+  title: "StarterSaaS - Build Your SaaS in Hours",
+  description: "Production-ready SaaS starter with authentication, teams, and everything you need to launch fast.",
 };
 
 export default function RootLayout({
@@ -32,8 +32,8 @@ export default function RootLayout({
       <body
         className={cn(
           "min-h-screen bg-background font-sans antialiased",
-          geistSans.variable,
-          geistMono.variable
+          inter.variable,
+          playfair.variable
         )}
       >
         <AuthProvider>
