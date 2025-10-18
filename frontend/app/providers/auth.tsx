@@ -89,6 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         const hasToken = typeof window !== 'undefined' && localStorage.getItem('authToken');
         
+        // No token and protected route - redirect to login
         if (!hasToken && !isPublicRoute) {
           setUser(null);
           router.push("/login");
@@ -96,25 +97,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return;
         }
         
-        if (isPublicRoute) {
+        // No token on public route - just set loading to false
+        if (!hasToken && isPublicRoute) {
+          setUser(null);
           setIsLoading(false);
           return;
         }
         
+        // Has token - fetch user data to maintain auth state (even on public routes)
         try {
           const userData = await authApi.getCurrentUser();
           const userObject = extractUserFromResponse(userData);
           
           if (userObject) {
             setUser(userObject);
-            return;
+          } else {
+            setUser(null);
+            // Only redirect if on protected route
+            if (!isPublicRoute) {
+              redirectIfUnauthorized();
+            }
           }
-          
-          setUser(null);
-          redirectIfUnauthorized();
         } catch (error) {
           setUser(null);
-          redirectIfUnauthorized();
+          // Only redirect if on protected route
+          if (!isPublicRoute) {
+            redirectIfUnauthorized();
+          }
         }
       } finally {
         setIsLoading(false);

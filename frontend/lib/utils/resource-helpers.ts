@@ -29,18 +29,17 @@ export interface OrgGroup {
 export function groupByOrganization<T extends { organizationId: string }>(
   items: T[],
   organizations: Array<{ id: string; name: string }>
-): OrgGroup[] {
-  const total = items.length
-  const grouped = organizations.map(org => {
-    const count = items.filter(item => item.organizationId === org.id).length
-    return {
-      id: org.id,
-      name: org.name,
-      count,
-      percentage: total > 0 ? (count / total) * 100 : 0
+): Record<string, T[]> {
+  const grouped: Record<string, T[]> = {}
+  
+  organizations.forEach(org => {
+    const orgItems = items.filter(item => item.organizationId === org.id)
+    if (orgItems.length > 0) {
+      grouped[org.name] = orgItems
     }
   })
-  return grouped.sort((a, b) => b.count - a.count)
+  
+  return grouped
 }
 
 export function formatCount(count: number, singular: string, plural?: string): string {

@@ -2,6 +2,7 @@ package resources
 
 import (
 	"os"
+	"platform/backend/config"
 	"platform/backend/fields"
 	"platform/backend/models"
 	"platform/backend/utils"
@@ -40,14 +41,14 @@ func Register(c *gin.Context) {
 		
 		hashedPassword := utils.Try(utils.HashPassword(req.Password.Value))
 		
-		user := models.User{
-			Email:        req.Email.Value,
-			PasswordHash: hashedPassword,
-			FirstName:    req.FirstName.Value,
-			LastName:     req.LastName.Value,
-			IsActive:     true,
-			Role:         "user",
-		}
+	user := models.User{
+		Email:        req.Email.Value,
+		PasswordHash: hashedPassword,
+		FirstName:    req.FirstName.Value,
+		LastName:     req.LastName.Value,
+		IsActive:     true,
+		Role:         config.RoleUser,
+	}
 
 		utils.TryErr(utils.HandleCRUD(c, "create", &user, "user"))
 		token := utils.Try(utils.GenerateToken(user.ID))

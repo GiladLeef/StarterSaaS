@@ -45,7 +45,7 @@ export function AdminDashboardLayout({
     <DashboardLayout
       sidebar={
         <DashboardSidebar
-          title="Admin Panel"
+          title="StarterSaaS"
           titleUrl="/admin"
           icon={<IconInnerShadowTop className="!size-5" />}
           user={{

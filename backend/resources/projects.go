@@ -1,6 +1,7 @@
 package resources
 
 import (
+	"platform/backend/config"
 	"platform/backend/fields"
 	"platform/backend/models"
 	"platform/backend/utils"
@@ -30,7 +31,7 @@ func CreateProject(req *CreateProjectRequest, userID uuid.UUID) *models.Project 
 		Name:           values["Name"].(string),
 		Description:    values["Description"].(string),
 		OrganizationID: orgID,
-		Status:         "active",
+		Status:         config.DefaultProjectStatus,
 	}
 }
 

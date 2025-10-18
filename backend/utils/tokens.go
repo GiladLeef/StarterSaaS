@@ -5,15 +5,9 @@ import (
 	"platform/backend/models"
 )
 
-func ByToken[T any](token string) (T, error) {
-	var model T
-	err := db.DB.Where("token = ?", token).Preload("User").First(&model).Error
-	return model, err
-}
-
+// FindPasswordResetToken finds a password reset token with preloaded user
 func FindPasswordResetToken(token string) (*models.PasswordResetToken, error) {
 	var resetToken models.PasswordResetToken
 	err := db.DB.Where("token = ?", token).Preload("User").First(&resetToken).Error
 	return &resetToken, err
 }
-

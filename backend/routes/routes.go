@@ -52,13 +52,23 @@ func SetupRoutes(r *gin.Engine) {
 				projects.DELETE("/:id", middleware.RequireProjectAccess(), resources.ProjectHandlers["delete"])
 			}
 
-			subscriptions := protected.Group("/subscriptions")
-			{
-				subscriptions.GET("", resources.SubscriptionHandlers["list"])
-				subscriptions.GET("/:id", resources.SubscriptionHandlers["get"])
-			}
+		subscriptions := protected.Group("/subscriptions")
+		{
+			subscriptions.GET("", resources.SubscriptionHandlers["list"])
+			subscriptions.GET("/:id", resources.SubscriptionHandlers["get"])
+		}
 
-			invitations := protected.Group("/invitations")
+		billing := protected.Group("/billing")
+		{
+			billing.POST("/checkout", resources.CreateCheckoutSession)
+			billing.GET("/subscription/status", resources.GetSubscriptionStatus)
+			billing.DELETE("/subscription/:id", resources.CancelSubscription)
+		}
+		
+		// Stripe webhook (no auth required)
+		v1.POST("/billing/webhook", resources.HandleStripeWebhook)
+
+		invitations := protected.Group("/invitations")
 			{
 				invitations.GET("", resources.ListUserInvitations)
 				invitations.POST("", resources.CreateInvitation)

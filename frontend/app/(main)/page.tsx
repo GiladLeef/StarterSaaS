@@ -33,19 +33,33 @@ import { ctaContent } from '@/lib/data/cta-content'
 import { CTAWithSideContent } from '@/components/landing/cta-with-side-content'
 
 export default function HomePage() {
-  const { isAuthenticated, user } = useAuth()
+  const { isAuthenticated, user, isLoading } = useAuth()
   const router = useRouter()
 
+  // Redirect logged-in users to their appropriate dashboard
   useEffect(() => {
-    if (isAuthenticated && user) {
+    if (!isLoading && isAuthenticated && user) {
       if (user.role === 'admin') {
         router.push('/admin')
       } else {
         router.push('/dashboard')
       }
     }
-  }, [isAuthenticated, user, router])
+  }, [isAuthenticated, user, isLoading, router])
 
+  // Show loading while checking auth status
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-t-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Show nothing while redirecting authenticated users
   if (isAuthenticated) {
     return null
   }
