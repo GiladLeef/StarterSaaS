@@ -31,7 +31,7 @@ go.work
 
 # Compiled binaries
 /backend/backend
-backend
+
 *.bin
 *.o
 *.a
