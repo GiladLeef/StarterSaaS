@@ -26,23 +26,6 @@ export interface OrgGroup {
   percentage: number
 }
 
-export function groupByOrganization<T extends { organizationId: string }>(
-  items: T[],
-  organizations: Array<{ id: string; name: string }>
-): Record<string, T[]> {
-  const grouped: Record<string, T[]> = {}
-  
-  organizations.forEach(org => {
-    const orgItems = items.filter(item => item.organizationId === org.id)
-    if (orgItems.length > 0) {
-      grouped[org.name] = orgItems
-    }
-  })
-  
-  return grouped
-}
-
 export function formatCount(count: number, singular: string, plural?: string): string {
   return `${count} ${count === 1 ? singular : (plural || `${singular}s`)}`
 }
-

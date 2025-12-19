@@ -1,8 +1,8 @@
 package db
 
 import (
-	"platform/backend/models"
 	"log"
+	"platform/backend/models"
 )
 
 func RunMigrations() error {
@@ -10,13 +10,8 @@ func RunMigrations() error {
 
 	err := DB.AutoMigrate(
 		&models.User{},
-		&models.Organization{},
-		&models.Project{},
-		&models.Subscription{},
-		&models.OrganizationInvitation{},
+
 		&models.PasswordResetToken{},
-		&models.Plan{},
-		&models.PlanFeature{},
 		&models.Setting{},
 	)
 
@@ -26,4 +21,4 @@ func RunMigrations() error {
 
 	log.Println("Migrations completed successfully")
 	return nil
-} 
+}

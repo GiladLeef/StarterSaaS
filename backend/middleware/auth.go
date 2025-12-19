@@ -25,17 +25,17 @@ func AuthRequired() gin.HandlerFunc {
 
 		authHeader := c.GetHeader("Authorization")
 		log.Printf("Auth check for path: %s", c.Request.URL.Path)
-		
+
 		utils.Check(authHeader != "" && strings.HasPrefix(authHeader, "Bearer "))
-		
+
 		token := strings.TrimPrefix(authHeader, "Bearer ")
 		utils.Check(token != "")
 
 		userID := utils.Try(utils.ValidateToken(token))
-		
+
 		c.Set("userID", userID)
 		log.Printf("Authentication successful for user: %s", userID)
-		
+
 		c.Next()
 	}
 }
@@ -52,4 +52,4 @@ func GetUserID(c *gin.Context) (uuid.UUID, bool) {
 		log.Printf("userID in context is not a UUID")
 	}
 	return id, ok
-} 
+}

@@ -21,11 +21,6 @@ func RequireAuth(c *gin.Context) uuid.UUID {
 	return userID
 }
 
-func CheckOwnership(orgID, userID uuid.UUID) bool {
-	isMember, _ := CheckOrganizationMembership(userID, orgID)
-	return isMember
-}
-
 func GetAuthenticatedUser(c *gin.Context, userID uuid.UUID) (*models.User, bool) {
 	user := Try(ByID[models.User](userID))
 	return &user, true
@@ -38,6 +33,6 @@ func RequireAuthenticatedUser(c *gin.Context, bc interface {
 	if !ok {
 		return nil, false
 	}
-	
+
 	return GetAuthenticatedUser(c, userID)
 }

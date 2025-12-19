@@ -14,7 +14,7 @@ func SetupRoutes(r *gin.Engine) {
 
 	v1 := r.Group("/api/v1")
 	{
-		v1.GET("/plans/public", resources.GetPublicPlans)
+
 		v1.GET("/settings/public", resources.GetPublicSettings)
 
 		auth := v1.Group("/auth")
@@ -29,58 +29,20 @@ func SetupRoutes(r *gin.Engine) {
 		protected := v1.Group("/")
 		protected.Use(middleware.AuthRequired())
 		{
-		users := protected.Group("/users")
-		{
-			users.GET("/me", resources.GetCurrentUser)
-			users.PUT("/me", resources.UpdateCurrentUser)
-			users.DELETE("/me", resources.DeleteCurrentUser)
-			users.POST("/me/avatar", resources.UploadAvatar)
-			users.POST("/me/avatar/generate", resources.GenerateAvatar)
-			users.DELETE("/me/avatar", resources.DeleteAvatar)
-		}
-
-		orgs := protected.Group("/organizations")
-		{
-			orgs.GET("", resources.ListOrganizations)
-			orgs.POST("", resources.OrganizationHandlers["create"])
-			orgs.GET("/:id", middleware.RequireOrganizationAccess(), resources.OrganizationHandlers["get"])
-			orgs.PUT("/:id", middleware.RequireOrganizationAccess(), resources.OrganizationHandlers["update"])
-			orgs.DELETE("/:id", middleware.RequireOrganizationAccess(), resources.OrganizationHandlers["delete"])
-		}
-
-		projects := protected.Group("/projects")
-		{
-			projects.GET("", resources.ListProjects)
-			projects.POST("", resources.ProjectHandlers["create"])
-			projects.GET("/:id", middleware.RequireProjectAccess(), resources.ProjectHandlers["get"])
-			projects.PUT("/:id", middleware.RequireProjectAccess(), resources.ProjectHandlers["update"])
-			projects.DELETE("/:id", middleware.RequireProjectAccess(), resources.ProjectHandlers["delete"])
-		}
-
-		utils.Route(protected, "/subscriptions", resources.SubscriptionHandlers)
-		utils.Route(protected, "/plans", resources.PlanHandlers)
-		utils.Route(protected, "/settings", resources.SettingHandlers)
-		
-		protected.GET("/settings/all", resources.GetAllSettings)
-		protected.PUT("/settings/batch", resources.UpdateSettings)
-
-		billing := protected.Group("/billing")
-		{
-			billing.POST("/checkout", resources.CreateCheckoutSession)
-			billing.GET("/subscription/status", resources.GetSubscriptionStatus)
-			billing.GET("/portal", resources.GetCustomerPortal)
-			billing.DELETE("/subscription/:id", resources.CancelSubscription)
-		}
-		
-		v1.POST("/billing/webhook", resources.HandleStripeWebhook)
-
-		invitations := protected.Group("/invitations")
+			users := protected.Group("/users")
 			{
-				invitations.GET("", resources.ListUserInvitations)
-				invitations.POST("", resources.CreateInvitation)
-				invitations.POST("/:id/accept", resources.AcceptInvitation)
-				invitations.POST("/:id/decline", resources.DeclineInvitation)
+				users.GET("/me", resources.GetCurrentUser)
+				users.PUT("/me", resources.UpdateCurrentUser)
+				users.DELETE("/me", resources.DeleteCurrentUser)
+				users.POST("/me/avatar", resources.UploadAvatar)
+				users.POST("/me/avatar/generate", resources.GenerateAvatar)
+				users.DELETE("/me/avatar", resources.DeleteAvatar)
 			}
+
+			utils.Route(protected, "/settings", resources.SettingHandlers)
+
+			protected.GET("/settings/all", resources.GetAllSettings)
+			protected.PUT("/settings/batch", resources.UpdateSettings)
 
 			admin := protected.Group("/admin")
 			{

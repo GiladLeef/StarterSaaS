@@ -2,7 +2,6 @@ package utils
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 type RestResource[T any] struct {
@@ -30,11 +29,3 @@ func (r RestResource[T]) Update(c *gin.Context) {
 func (r RestResource[T]) Delete(c *gin.Context) {
 	RestDelete[T](c, r.Name)
 }
-
-func (r RestResource[T]) WithOwnership(c *gin.Context, getOrgID func(T) uuid.UUID) T {
-	userID := GetCurrentUserID(c)
-	resource := FetchByParam[T](c, "id")
-	Check(CheckOwnership(getOrgID(resource), userID))
-	return resource
-}
-

@@ -27,11 +27,11 @@ export function useAutoFetch<T>(
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to fetch data";
       setError(errorMessage);
-      
+
       if (redirectOnAuth && errorMessage.includes("unauthorized")) {
         router.push("/login");
       }
-      
+
       onError?.(errorMessage);
     } finally {
       setIsLoading(false);
@@ -67,11 +67,11 @@ export function useSingleFetch<T>(
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to fetch data";
       setError(errorMessage);
-      
+
       if (redirectOnAuth && errorMessage.includes("unauthorized")) {
         router.push("/login");
       }
-      
+
       onError?.(errorMessage);
     } finally {
       setIsLoading(false);
@@ -97,14 +97,5 @@ export function useStatusCounts<T extends { status?: string }>(items: T[]) {
   };
 }
 
-export function useGroupByOrg<T extends { organizationId: string }>(
-  items: T[],
-  orgs: Array<{ id: string; name: string }>
-) {
-  return orgs.map((org) => {
-    const count = items.filter((item) => item.organizationId === org.id).length;
-    const percentage = items.length > 0 ? (count / items.length) * 100 : 0;
-    return { ...org, count, percentage };
-  });
-}
+
 
