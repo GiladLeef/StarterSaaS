@@ -1,7 +1,5 @@
 import {
   IconDashboard,
-  IconBuilding,
-  IconFolder,
   IconUser,
   IconSettings,
   IconHelp,
@@ -12,8 +10,6 @@ import { appConfig } from '@/lib/config'
 export const dashboardNav = {
   main: [
     { title: "Dashboard", url: "/dashboard", icon: IconDashboard },
-    { title: "Organizations", url: "/organizations", icon: IconBuilding },
-    { title: "Projects", url: "/projects", icon: IconFolder },
     { title: "Profile", url: "/profile", icon: IconUser },
   ],
   secondary: [
@@ -29,38 +25,21 @@ export const dashboardConfig = {
   variant: "inset" as const
 }
 
-export const getDashboardStats = (organizations: any[], projects: any[], invitations: any[]) => {
-  const activeProjects = projects.filter((p: any) => p.status === 'active').length
-  const pendingInvitations = invitations.filter((i: any) => i.status === 'pending').length
-
+export const getDashboardStats = (users: number, activeUsers: number) => {
   return [
     {
-      title: "Organizations",
-      value: organizations.length,
-      description: "Your organizations",
-      badge: "Active",
-      footer: "Teams you're part of",
-    },
-    {
-      title: "Total Projects",
-      value: projects.length,
-      description: "Your projects",
-      badge: "All",
-      footer: "All your projects",
-    },
-    {
-      title: "Active Projects",
-      value: activeProjects,
-      description: "Currently active",
+      title: "Active Users",
+      value: activeUsers,
+      description: "Users currently online",
       badge: "Live",
-      footer: "In-progress projects",
+      footer: "Real-time activity",
     },
     {
-      title: "Invitations",
-      value: pendingInvitations,
-      description: "Pending invitations",
-      badge: "Pending",
-      footer: "Review and accept",
+      title: "Total Users",
+      value: users,
+      description: "Registered users",
+      badge: "All",
+      footer: "Total user base",
     },
   ]
 }
@@ -70,4 +49,3 @@ export const formatUserForSidebar = (user: any) => ({
   email: user?.email || appConfig.supportEmail,
   avatar: user?.avatar || appConfig.defaultUserAvatar,
 })
-

@@ -19,28 +19,25 @@ import {
 function getIconForResource(key: string) {
   const icons: Record<string, any> = {
     user: IconUsers,
-    organization: IconBuilding,
-    project: IconFolder,
-    invitation: IconFileDescription,
-    subscription: IconFileDescription,
+    setting: IconSettings,
   }
   return icons[key] || IconDashboard
 }
 
 interface AdminDashboardLayoutProps {
   user: any
-  resources?: Array<{ key: string; [key: string]: any }>
+  resources?: Array<{ key: string;[key: string]: any }>
   title: string
   action?: React.ReactNode
   children: React.ReactNode
 }
 
-export function AdminDashboardLayout({ 
-  user, 
-  resources = [], 
-  title, 
-  action, 
-  children 
+export function AdminDashboardLayout({
+  user,
+  resources = [],
+  title,
+  action,
+  children
 }: AdminDashboardLayoutProps) {
   return (
     <DashboardLayout

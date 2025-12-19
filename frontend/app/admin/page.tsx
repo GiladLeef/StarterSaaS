@@ -44,9 +44,6 @@ export default function AdminDashboard() {
 
   const adminStats = stats ? [
     { title: "Total Users", value: stats.users, description: "Registered accounts", badge: "Active", footer: "Registered accounts", footerDescription: "Total platform users" },
-    { title: "Organizations", value: stats.organizations, description: "Active organizations", badge: "Active", footer: "Active organizations", footerDescription: "Collaborative workspaces" },
-    { title: "Total Projects", value: stats.projects, description: "All projects", badge: "All", footer: "Project portfolio", footerDescription: "All platform projects" },
-    { title: "Active Projects", value: stats.activeProjects, description: "Currently active", badge: "Live", footer: "Currently active", footerDescription: "In-progress projects" },
   ] : []
 
   return (

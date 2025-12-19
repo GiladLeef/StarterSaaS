@@ -13,10 +13,6 @@ interface UseResourceListOptions {
   onError?: (error: string) => void;
 }
 
-/**
- * Generic hook for managing resource lists (organizations, projects, etc.)
- * Handles loading, error states, and CRUD operations automatically
- */
 export function useResourceList<T>(
   api: ResourceAPI<T>,
   resourceName: string,
@@ -38,11 +34,11 @@ export function useResourceList<T>(
     } catch (err) {
       const errorMessage = `Failed to load ${resourceName}`;
       setError(errorMessage);
-      
+
       if (err instanceof Error && err.message.includes("unauthorized")) {
         router.push("/login");
       }
-      
+
       if (onError) {
         onError(errorMessage);
       }
@@ -67,14 +63,14 @@ export function useResourceList<T>(
         setError("");
         const response = await api.create(data);
         const newItem = response.data?.[resourceName.slice(0, -1)]; // singular form
-        
+
         if (newItem) {
           setItems((prev) => [...prev, newItem]);
         } else {
           // Refetch if we don't get the item back
           await fetchItems();
         }
-        
+
         return response;
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : `Failed to create ${resourceName}`;
@@ -95,7 +91,7 @@ export function useResourceList<T>(
         setError("");
         const response = await api.update(id, data);
         const updatedItem = response.data?.[resourceName.slice(0, -1)]; // singular form
-        
+
         if (updatedItem) {
           setItems((prev) =>
             prev.map((item: any) => (item.id === id ? updatedItem : item))
@@ -104,7 +100,7 @@ export function useResourceList<T>(
           // Refetch if we don't get the item back
           await fetchItems();
         }
-        
+
         return response;
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : `Failed to update ${resourceName}`;

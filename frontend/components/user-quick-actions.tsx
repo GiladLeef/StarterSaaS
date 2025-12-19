@@ -3,22 +3,16 @@ import { QuickActionGrid } from "@/components/common/quick-action-card"
 
 const quickActions = [
   {
-    title: "New Organization",
-    description: "Create a team workspace",
-    icon: <IconBuilding className="h-6 w-6 text-primary" />,
-    href: "/organizations"
-  },
-  {
-    title: "New Project",
-    description: "Start a new project",
-    icon: <IconFolder className="h-6 w-6 text-primary" />,
-    href: "/projects"
-  },
-  {
-    title: "View Invitations",
-    description: "Check pending invites",
+    title: "Edit Profile",
+    description: "Update your personal details",
     icon: <IconUsers className="h-6 w-6 text-primary" />,
-    href: "/organizations"
+    href: "/settings/profile"
+  },
+  {
+    title: "Security",
+    description: "Manage password and security",
+    icon: <IconBuilding className="h-6 w-6 text-primary" />,
+    href: "/settings/security"
   }
 ]
 
@@ -31,4 +25,3 @@ export function UserQuickActions() {
     />
   )
 }
-

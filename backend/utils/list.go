@@ -2,67 +2,12 @@ package utils
 
 import (
 	"net/http"
-	"platform/backend/db"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
-// ListWithOrgFilter lists resources that belong to organizations the user is a member of
-// Optionally filters by a specific organization ID from query parameter
-func ListWithOrgFilter[T any](
-	c *gin.Context,
-	bc interface {
-		GetCurrentUserID(c *gin.Context) (uuid.UUID, bool)
-		CheckOwnership(organizationID, userID uuid.UUID) bool
-	},
-	resourceName string,
-	pluralName string,
-) {
-	userID, ok := bc.GetCurrentUserID(c)
-	if !ok {
-		UnauthorizedResponse(c, "")
-		return
-	}
-
-	var orgID *uuid.UUID
-	if orgIDStr := c.Query("organizationId"); orgIDStr != "" {
-		id, err := uuid.Parse(orgIDStr)
-		if err != nil {
-			ErrorResponse(c, http.StatusBadRequest, "Invalid organization ID format")
-			return
-		}
-
-		if !bc.CheckOwnership(id, userID) {
-			UnauthorizedResponse(c, "You don't have access to this organization")
-			return
-		}
-		orgID = &id
-	}
-
-	var orgIDs []uuid.UUID
-	if err := db.DB.Table("user_organizations").
-		Where("user_id = ?", userID).
-		Pluck("organization_id", &orgIDs).Error; err != nil {
-		ServerErrorResponse(c, err)
-		return
-	}
-
-	var resources []T
-	query := db.DB.Where("organization_id IN ?", orgIDs)
-
-	if orgID != nil {
-		query = query.Where("organization_id = ?", *orgID)
-	}
-
-	if err := query.Find(&resources).Error; err != nil {
-		ServerErrorResponse(c, err)
-		return
-	}
-
-	SuccessResponse(c, http.StatusOK, "", gin.H{pluralName: resources})
-}
+// ListWithOrgFilter removed as multi-tenancy is deprecated.
 
 // ListWithPreload lists resources with preloaded associations
 func ListWithPreload[T any](
@@ -73,7 +18,7 @@ func ListWithPreload[T any](
 	preload ...string,
 ) {
 	var resources []T
-	
+
 	for _, p := range preload {
 		query = query.Preload(p)
 	}
@@ -85,4 +30,3 @@ func ListWithPreload[T any](
 
 	SuccessResponse(c, http.StatusOK, "", gin.H{pluralName: resources})
 }
-

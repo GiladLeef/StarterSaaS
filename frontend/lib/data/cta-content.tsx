@@ -14,24 +14,6 @@ export const ctaContent = {
         { label: "HIPAA", color: "bg-blue-600" },
         { label: "GDPR", color: "bg-blue-600" }
       ],
-      prefix: "We are",
-      suffix: "compliant."
-    },
-    {
-      title: "Book a Demo",
-      description: `Interested in seeing ${appConfig.siteName} in action? Schedule a personalized demo with our team.`,
-      action: {
-        label: "Schedule a Demo",
-        href: "#demo"
-      }
-    },
-    {
-      title: "View Pricing",
-      description: "Explore our flexible pricing plans and find the perfect fit for your business.",
-      action: {
-        label: "Pricing",
-        href: "#pricing"
-      }
     }
   ]
 }

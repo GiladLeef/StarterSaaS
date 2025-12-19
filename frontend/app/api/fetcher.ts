@@ -45,14 +45,14 @@ interface ApiResponse<T> {
  * Main fetch function that handles all API requests
  */
 export async function apiFetch<T = any>(
-  endpoint: string, 
+  endpoint: string,
   options: FetchOptions = {}
 ): Promise<ApiResponse<T>> {
-  const { 
+  const {
     method = 'GET',
     headers = {},
     body,
-    auth = true 
+    auth = true
   } = options;
 
   // Prepare headers
@@ -109,14 +109,14 @@ export const authApi = {
         body: { email, password },
         auth: false,
       });
-      
+
       if (!response.data || !response.data.token) {
         throw new Error('No authentication token received');
       }
-      
+
       // Store the token in localStorage
       setAuthToken(response.data.token);
-      
+
       return response.data;
     } catch (error) {
       handleApiError('login', error);
@@ -131,14 +131,14 @@ export const authApi = {
         body: userData,
         auth: false,
       });
-      
+
       if (!response.data || !response.data.token) {
         throw new Error('No authentication token received');
       }
-      
+
       // Store the token in localStorage
       setAuthToken(response.data.token);
-      
+
       return response.data;
     } catch (error) {
       handleApiError('registration', error);
@@ -150,21 +150,21 @@ export const authApi = {
     removeAuthToken();
   },
 
-  forgotPassword: (email: string) => 
+  forgotPassword: (email: string) =>
     apiFetch<{ message: string }>('/api/v1/auth/forgot-password', {
       method: 'POST',
       body: { email },
       auth: false,
     }),
 
-  resetPassword: (token: string, password: string) => 
+  resetPassword: (token: string, password: string) =>
     apiFetch<{ message: string }>('/api/v1/auth/reset-password', {
       method: 'POST',
       body: { token, password },
       auth: false,
     }),
 
-  changePassword: (data: { currentPassword: string; newPassword: string }) => 
+  changePassword: (data: { currentPassword: string; newPassword: string }) =>
     apiFetch<{ message: string }>('/api/v1/users/me/password', {
       method: 'PUT',
       body: data,
@@ -174,7 +174,7 @@ export const authApi = {
   getCurrentUser: async () => {
     try {
       const response = await apiFetch<{ user: any }>('/api/v1/users/me');
-      
+
       if (response && response.success && !response.data) {
         return { user: response };
       }
@@ -247,57 +247,6 @@ const createCrudApi = <T>(basePath: string, entityName: string) => ({
   }
 });
 
-/**
- * Organizations API functions
- */
-export const organizationsApi = createCrudApi<any>('/api/v1/organizations', 'organization');
-
-/**
- * Organization Invitations API functions
- * Uses createCrudApi for standard operations, extended with custom actions
- */
-const baseInvitationsApi = createCrudApi<any>('/api/v1/invitations', 'invitation');
-
-export const invitationsApi = {
-  ...baseInvitationsApi,
-  
-  // Custom action: accept invitation
-  accept: async (id: string) => {
-    try {
-      const response = await apiFetch(`/api/v1/invitations/${id}/accept`, {
-        method: 'POST',
-      });
-      return response;
-    } catch (error) {
-      handleApiError('accept invitation', error);
-      throw error;
-    }
-  },
-
-  // Custom action: decline invitation
-  decline: async (id: string) => {
-    try {
-      const response = await apiFetch(`/api/v1/invitations/${id}/decline`, {
-        method: 'POST',
-      });
-      return response;
-    } catch (error) {
-      handleApiError('decline invitation', error);
-      throw error;
-    }
-  },
-};
-
-/**
- * Projects API functions
- */
-export const projectsApi = createCrudApi<any>('/api/v1/projects', 'project');
-
-
-/**
- * Subscriptions API functions
- */
-export const subscriptionsApi = createCrudApi<any>('/api/v1/subscriptions', 'subscription');
 
 /**
  * User API functions

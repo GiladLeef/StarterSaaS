@@ -1,38 +1,37 @@
-import { IconBuilding, IconFolder, IconUsers } from '@tabler/icons-react'
+import { IconUser, IconSettings, IconShield } from '@tabler/icons-react'
 
 export const quickActions = [
   {
-    title: 'Create Organization',
-    description: 'Start a new organization to collaborate with your team.',
-    icon: <IconBuilding className="w-8 h-8" />,
+    title: 'Update Profile',
+    description: 'Keep your personal information up to date.',
+    icon: <IconUser className="w-8 h-8" />,
     actions: [
       {
-        label: 'Create Organization',
-        href: '/organizations'
+        label: 'Edit Profile',
+        href: '/settings/profile'
       }
     ]
   },
   {
-    title: 'Start a Project',
-    description: 'Begin a new project within your organizations.',
-    icon: <IconFolder className="w-8 h-8" />,
+    title: 'Security Settings',
+    description: 'Manage your password and account security.',
+    icon: <IconShield className="w-8 h-8" />,
     actions: [
       {
-        label: 'Create Project',
-        href: '/projects'
+        label: 'Manage Security',
+        href: '/settings/security'
       }
     ]
   },
   {
-    title: 'Invite Team Members',
-    description: 'Collaborate by inviting team members to your organizations.',
-    icon: <IconUsers className="w-8 h-8" />,
+    title: 'App Settings',
+    description: 'Configure your application preferences.',
+    icon: <IconSettings className="w-8 h-8" />,
     actions: [
       {
-        label: 'Manage Team',
-        href: '/organizations'
+        label: 'Go to Settings',
+        href: '/settings'
       }
     ]
   }
 ]
-

@@ -15,24 +15,7 @@ const (
 	RoleAdmin = "admin"
 )
 
-// Subscription plan constants
-const (
-	PlanFree       = "free"
-	PlanPro        = "pro"
-	PlanEnterprise = "enterprise"
-)
-
-// Billing period constants
-const (
-	BillingMonthly = "monthly"
-	BillingYearly  = "yearly"
-)
-
 // Default values
 const (
-	DefaultProjectStatus = StatusActive
-	DefaultUserRole      = RoleUser
-	DefaultPlan          = PlanFree
-	DefaultBillingPeriod = BillingMonthly
+	DefaultUserRole = RoleUser
 )
-
