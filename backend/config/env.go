@@ -57,3 +57,7 @@ func GetDatabaseDSN() (string, error) {
 func GetMigrationsPath() string {
 	return os.Getenv("MIGRATIONS_PATH")
 }
+
+func GetGeminiKey() string {
+	return os.Getenv("GEMINI_API_KEY")
+}
