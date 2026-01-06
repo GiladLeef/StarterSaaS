@@ -32,7 +32,7 @@ func AutoUpdateHandler[T any, R any](name string) gin.HandlerFunc {
 func AutoCreate[T any, R any](name string, onCreate func(*R, uuid.UUID) *T) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		H(c, func() {
-			req := BindResource[R](c)
+			req := Get(BindAndValidate[R](c))
 			userID := RequireAuth(c)
 			item := onCreate(req, userID)
 			RestCreate(c, name, item, StatusCreated)
@@ -71,4 +71,3 @@ func Route(router *gin.RouterGroup, path string, handlers map[string]gin.Handler
 		group.DELETE("/:id", h)
 	}
 }
-
