@@ -150,20 +150,6 @@ export const authApi = {
     removeAuthToken();
   },
 
-  forgotPassword: (email: string) =>
-    apiFetch<{ message: string }>('/api/v1/auth/forgot-password', {
-      method: 'POST',
-      body: { email },
-      auth: false,
-    }),
-
-  resetPassword: (token: string, password: string) =>
-    apiFetch<{ message: string }>('/api/v1/auth/reset-password', {
-      method: 'POST',
-      body: { token, password },
-      auth: false,
-    }),
-
   changePassword: (data: { currentPassword: string; newPassword: string }) =>
     apiFetch<{ message: string }>('/api/v1/users/me/password', {
       method: 'PUT',
