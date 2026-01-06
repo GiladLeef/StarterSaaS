@@ -36,5 +36,3 @@ func DeleteDB(model interface{}) error {
 func FindByIDDB(model interface{}, id uuid.UUID) error {
 	return db.DB.First(model, id).Error
 }
-
-// Deprecated functions GetUserOrgIDs and BuildOrgQuery removed.
