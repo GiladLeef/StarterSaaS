@@ -15,7 +15,7 @@ import { PageHeader } from "@/components/common/page-header"
 export default function ProfilePage() {
   const router = useRouter();
   const { user, updateUser } = useAuth();
-  
+
   const {
     formData,
     handleChange,
@@ -153,21 +153,6 @@ export default function ProfilePage() {
             Manage your account security settings
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium">Password</p>
-                <p className="text-sm text-muted-foreground">
-                  Change your password
-                </p>
-              </div>
-              <Button variant="outline" onClick={() => router.push("/forgot-password")}>
-                Change Password
-              </Button>
-            </div>
-          </div>
-        </CardContent>
       </Card>
 
       <Card className="border-destructive mt-6">

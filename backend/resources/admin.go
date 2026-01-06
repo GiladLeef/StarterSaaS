@@ -91,7 +91,6 @@ func UpdateAdminResource(c *gin.Context) {
 			}
 		}
 
-		// Save the updated record using DRY utility
 		utils.TryErr(utils.SaveGeneric(existingPtr.Interface()))
 
 		utils.Respond(c, utils.StatusOK, resourceName+" updated successfully", gin.H{

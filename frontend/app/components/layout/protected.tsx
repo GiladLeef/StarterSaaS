@@ -9,8 +9,6 @@ const publicRoutes = [
   "/",
   "/login",
   "/register",
-  "/forgot-password",
-  "/reset-password",
   "/terms",
   "/privacy",
 ];
@@ -19,7 +17,7 @@ export default function ProtectedRoute({ children }: { children: ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
   const pathname = usePathname();
 
-  const isPublicRoute = publicRoutes.some(route => 
+  const isPublicRoute = publicRoutes.some(route =>
     pathname === route || pathname?.startsWith(route + "/")
   );
 

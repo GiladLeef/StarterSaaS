@@ -11,7 +11,6 @@ func RunMigrations() error {
 	err := DB.AutoMigrate(
 		&models.User{},
 
-		&models.PasswordResetToken{},
 		&models.Setting{},
 	)
 

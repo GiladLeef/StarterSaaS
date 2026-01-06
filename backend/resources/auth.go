@@ -5,11 +5,9 @@ import (
 	"platform/backend/fields"
 	"platform/backend/models"
 	"platform/backend/utils"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 )
 
 type RegisterRequest struct {
@@ -21,11 +19,6 @@ type RegisterRequest struct {
 
 type LoginRequest struct {
 	Email    fields.Email
-	Password fields.Password
-}
-
-type ResetPasswordRequest struct {
-	Token    fields.Token
 	Password fields.Password
 }
 
@@ -83,27 +76,5 @@ func RefreshToken(c *gin.Context) {
 
 		token := utils.Try(utils.GenerateToken(id))
 		utils.Respond(c, utils.StatusOK, "Token refreshed", gin.H{"token": token})
-	})
-}
-
-func ResetPassword(c *gin.Context) {
-	utils.H(c, func() {
-		req := utils.Get(utils.BindAndValidate[ResetPasswordRequest](c))
-		resetToken := utils.Try(utils.FindPasswordResetToken(req.Token.Value))
-
-		if time.Now().After(resetToken.ExpiresAt) {
-			utils.Respond(c, utils.StatusBadRequest, "Reset token has expired", nil)
-			utils.Abort()
-		}
-
-		hashedPassword := utils.Try(utils.HashPassword(req.Password.Value))
-
-		utils.TryErr(utils.Transaction(c, func(tx *gorm.DB) error {
-			tx.Model(&resetToken.User).Update("password_hash", hashedPassword)
-			tx.Delete(&resetToken)
-			return nil
-		}))
-
-		utils.Respond(c, utils.StatusOK, "Password has been reset successfully", nil)
 	})
 }

@@ -19,7 +19,7 @@ type TokenClaims struct {
 func GenerateToken(userID uuid.UUID) (string, error) {
 	secret := getJWTSecret()
 	expiry := getJWTExpiry()
-	
+
 	claims := TokenClaims{
 		UserID: userID,
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -72,4 +72,4 @@ func getJWTExpiry() time.Duration {
 	expiryStr := os.Getenv("JWT_EXPIRY")
 	expiry, _ := time.ParseDuration(expiryStr)
 	return expiry
-} 
+}

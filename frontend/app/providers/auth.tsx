@@ -29,15 +29,13 @@ const publicRoutes = [
   "/",
   "/login",
   "/register",
-  "/forgot-password",
-  "/reset-password",
   "/terms",
   "/privacy",
 ];
 
 const isPublicRoutePath = (pathname: string | null): boolean => {
   if (!pathname) return false;
-  return publicRoutes.some(route => 
+  return publicRoutes.some(route =>
     pathname === route || pathname.startsWith(`${route}/`)
   );
 };
@@ -45,21 +43,21 @@ const isPublicRoutePath = (pathname: string | null): boolean => {
 // Extract user from different response formats
 const extractUserFromResponse = (userData: any): User | null => {
   if (!userData) return null;
-  
+
   const userObject = userData.user || userData;
-  
+
   // Check for email instead of id (id might not be in public response)
   if (userObject && userObject.email) {
     return userObject;
   }
-  
+
   return null;
 };
 
 const handleAuthSuccess = (router: any, user: any) => {
   // Redirect admin to /admin, regular users to /dashboard
   const redirectPath = user?.role === 'admin' ? '/admin' : '/dashboard';
-  
+
   // Use Next.js router for client-side navigation (no page reload)
   router.push(redirectPath);
 };
@@ -71,20 +69,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   const isPublicRoute = isPublicRoutePath(pathname);
-  
+
   const redirectIfUnauthorized = () => {
     if (!isPublicRoute) {
       router.push("/login");
     }
   };
-  
+
   useEffect(() => {
     const checkAuth = async () => {
       try {
         setIsLoading(true);
-        
+
         const hasToken = typeof window !== 'undefined' && localStorage.getItem('authToken');
-        
+
         // No token and protected route - redirect to login
         if (!hasToken && !isPublicRoute) {
           setUser(null);
@@ -92,19 +90,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setIsLoading(false);
           return;
         }
-        
+
         // No token on public route - just set loading to false
         if (!hasToken && isPublicRoute) {
           setUser(null);
           setIsLoading(false);
           return;
         }
-        
+
         // Has token - fetch user data to maintain auth state (only on mount)
         try {
           const userData = await authApi.getCurrentUser();
           const userObject = extractUserFromResponse(userData);
-          
+
           if (userObject) {
             setUser(userObject);
           } else {
@@ -125,21 +123,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsLoading(false);
       }
     };
-    
+
     // Only check auth on initial mount, not on every route change
     checkAuth();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  
+
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
       const response = await authApi.login(email, password);
-      
+
       if (!response || !response.user) {
         throw new Error("Login failed: Invalid response from server");
       }
-      
+
       setUser(response.user);
       handleAuthSuccess(router, response.user);
     } catch (error) {
@@ -148,22 +146,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
     }
   };
-  
+
   const logout = () => {
     authApi.logout();
     setUser(null);
     router.push("/login");
   };
-  
+
   const register = async (userData: any) => {
     setIsLoading(true);
     try {
       const response = await authApi.register(userData);
-      
+
       if (!response || !response.user) {
         throw new Error("Registration failed: Invalid response from server");
       }
-      
+
       setUser(response.user);
       handleAuthSuccess(router, response.user);
     } catch (error) {
@@ -172,12 +170,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
     }
   };
-  
+
   const updateUser = (userData: Partial<User>) => {
     if (!user) return;
     setUser({ ...user, ...userData });
   };
-  
+
   const value = {
     user,
     isLoading,
@@ -187,7 +185,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     register,
     updateUser,
   };
-  
+
   return (
     <AuthContext.Provider value={value}>
       {children}

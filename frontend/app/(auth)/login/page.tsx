@@ -15,7 +15,7 @@ import { useFormDialog } from "@/app/hooks/dialog";
 export default function LoginPage() {
   const { login, isLoading } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
-  
+
   // DRY: Use form dialog hook
   const {
     formData,
@@ -40,7 +40,7 @@ export default function LoginPage() {
   };
 
   return (
-    <SplitAuthLayout 
+    <SplitAuthLayout
       welcomeTitle="Welcome back, legend."
       welcomeSubtitle="StarterSaaS kept working. You kept... building amazing products."
       highlightedWord="building amazing products"
@@ -71,17 +71,7 @@ export default function LoginPage() {
               required
             />
           </div>
-
           <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="password">Password</Label>
-              <Link
-                href="/forgot-password"
-                className="text-sm text-primary hover:underline"
-              >
-                Forgot password?
-              </Link>
-            </div>
             <div className="relative">
               <Input
                 id="password"
@@ -120,6 +110,6 @@ export default function LoginPage() {
           <GoogleButton />
         </form>
       </AuthFormWrapper>
-    </SplitAuthLayout>
+    </SplitAuthLayout >
   );
 }
